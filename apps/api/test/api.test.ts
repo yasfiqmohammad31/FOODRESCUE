@@ -1,4 +1,5 @@
 import app from "../src/index";
+import { seedDbDefaults } from "../src/db/mock-db";
 import type { Env } from "../src/types";
 
 const mockEnv: Env = {
@@ -14,6 +15,7 @@ const api = (path: string, init?: RequestInit) => {
 
 // Test runner helper
 async function runTests() {
+  seedDbDefaults();
   console.log("=================================================");
   console.log("🧪 STARTING FOODRESCUE BACKEND API TEST SUITE 🧪");
   console.log("=================================================\n");

@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "test": "turbo test",
+    "test": "pnpm --filter api test",
     "test:e2e": "pnpm --filter api test:e2e",
     "deploy:api": "pnpm --filter api deploy:prod",
     "lint": "turbo lint",
