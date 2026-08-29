@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { AlertCircle, CheckCircle2, LocateFixed, MapPin, Search, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertCircle, CheckCircle2, Loader2, LocateFixed, MapPin, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { PRESET_HUBS, useGeoLocation } from "@/contexts/geo-context";
+import { consumerApi } from "@/lib/api-client";
 
 interface LocationModalProps {
   isOpen: boolean;
@@ -31,6 +32,31 @@ export function LocationModal({ isOpen, onClose }: LocationModalProps) {
   const [tempCoords, setTempCoords] = useState<{ lat: number | null; lng: number | null }>({ lat, lng });
   const [statusMessage, setStatusMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
 
+  // Live Geocoding Autocomplete State
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<Array<{ label: string; displayName: string; lat: number; lng: number }>>([]);
+
+  useEffect(() => {
+    if (!addressInput || addressInput.trim().length < 3) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await consumerApi.searchLocations(addressInput.trim());
+        setSearchResults(results);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [addressInput]);
+
   if (!isOpen) return null;
 
   const handleUseCurrentGPS = async () => {
@@ -55,9 +81,20 @@ export function LocationModal({ isOpen, onClose }: LocationModalProps) {
   const handleSelectPreset = (hub: (typeof PRESET_HUBS)[0]) => {
     setAddressInput(hub.name);
     setTempCoords({ lat: hub.lat, lng: hub.lng });
+    setSearchResults([]);
     setStatusMessage({
       type: "success",
       text: `Area diubah ke ${hub.name}`,
+    });
+  };
+
+  const handleSelectSearchResult = (result: { label: string; lat: number; lng: number }) => {
+    setAddressInput(result.label);
+    setTempCoords({ lat: result.lat, lng: result.lng });
+    setSearchResults([]);
+    setStatusMessage({
+      type: "success",
+      text: `Lokasi dipilih: ${result.label}`,
     });
   };
 
@@ -153,24 +190,47 @@ export function LocationModal({ isOpen, onClose }: LocationModalProps) {
           </div>
         </div>
 
-        {/* Manual Address Input */}
-        <div className="mt-4">
+        {/* Manual Address Input with Live Search Autocomplete */}
+        <div className="mt-4 relative">
           <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Cari Lokasi / Kampus / Kos
+            Cari Lokasi / Kampus / Kos / Kota
           </label>
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
               value={addressInput}
               onChange={(e) => {
                 setAddressInput(e.target.value);
                 setStatusMessage(null);
               }}
-              placeholder="Contoh: Jl. Gebang Wetan atau Kampus ITS"
+              placeholder="Ketik nama jalan, kampus, atau area..."
               aria-label="Cari alamat atau nama kampus"
-              className="pl-9 h-10 rounded-xl"
+              className="pl-9 pr-9 h-10 rounded-xl"
             />
+            {isSearching && (
+              <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-primary" />
+            )}
           </div>
+
+          {/* Autocomplete Dropdown */}
+          {searchResults.length > 0 && (
+            <div className="absolute left-0 right-0 top-[68px] z-30 max-h-48 overflow-y-auto rounded-xl border border-border bg-card shadow-xl p-1 space-y-0.5">
+              {searchResults.map((result, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSelectSearchResult(result)}
+                  className="w-full flex items-start gap-2.5 p-2 rounded-lg text-left hover:bg-muted/70 transition"
+                >
+                  <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">{result.label}</p>
+                    <p className="text-[10px] text-muted-foreground line-clamp-1">{result.displayName}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Suggested Quick Picks */}

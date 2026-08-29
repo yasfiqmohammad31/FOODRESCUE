@@ -59,6 +59,22 @@ export const consumerApi = {
     return null;
   },
 
+  async searchLocations(query: string): Promise<Array<{ label: string; displayName: string; lat: number; lng: number }>> {
+    if (!query || query.trim().length < 2) return [];
+    try {
+      const res = await fetchApi<{
+        success: boolean;
+        results: Array<{ label: string; displayName: string; lat: number; lng: number }>;
+      }>(`/api/geocode/search?q=${encodeURIComponent(query.trim())}`);
+      if (res.success && Array.isArray(res.results)) {
+        return res.results;
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  },
+
   // Checkout & Orders
   async createOrder(payload: {
     listingId: string;

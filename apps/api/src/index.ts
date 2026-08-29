@@ -106,6 +106,55 @@ app.route("/api/vouchers", vouchersRouter);
 app.route("/api/ai", aiRouter);
 app.route("/api/impact", impactRouter);
 
+// Geocoding Search Proxy
+app.get("/api/geocode/search", async (c) => {
+  const q = c.req.query("q");
+  if (!q || q.trim().length < 2) {
+    return c.json({ success: true, results: [] });
+  }
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q.trim())}&countrycodes=id&format=json&limit=5&addressdetails=1`;
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "FoodRescue-App/1.0",
+        "Accept-Language": "id",
+      },
+    });
+
+    if (!res.ok) {
+      return c.json({ success: true, results: [] });
+    }
+
+    const raw = (await res.json()) as any[];
+    const results = raw.map((item) => {
+      const suburb =
+        item.address?.suburb ||
+        item.address?.neighbourhood ||
+        item.address?.village ||
+        item.address?.city_district;
+      const city = item.address?.city || item.address?.town || item.address?.county || "";
+      const name = item.name || (item.display_name ? item.display_name.split(",")[0] : "");
+
+      const label =
+        suburb && city
+          ? `${name && name !== suburb ? name + ", " : ""}${suburb}, ${city}`
+          : item.display_name.split(",").slice(0, 3).join(",");
+
+      return {
+        label,
+        displayName: item.display_name,
+        lat: parseFloat(item.lat),
+        lng: parseFloat(item.lon),
+      };
+    });
+
+    return c.json({ success: true, results });
+  } catch (error: any) {
+    return c.json({ success: false, results: [], message: error.message });
+  }
+});
+
 // Testing & On-Demand Reset Helper Endpoints
 app.post("/api/testing/reset", (c) => {
   db.users = [];
