@@ -96,6 +96,9 @@ export default function MerchantRegisterPage() {
               });
               if (res.success && res.token) {
                 localStorage.setItem("fr_merchant_token", res.token);
+                if (res.user) {
+                  localStorage.setItem("fr_merchant", JSON.stringify(res.user));
+                }
                 router.push("/onboarding");
               }
             } catch {
@@ -124,6 +127,9 @@ export default function MerchantRegisterPage() {
       });
       if (res.success && res.token) {
         localStorage.setItem("fr_merchant_token", res.token);
+        if (res.user) {
+          localStorage.setItem("fr_merchant", JSON.stringify(res.user));
+        }
       }
       router.push("/onboarding");
     } catch {
