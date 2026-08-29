@@ -40,6 +40,7 @@ const CATEGORIES = [
 export default function FeedPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [creditBalance, setCreditBalance] = useState<number>(0);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("distance");
@@ -119,7 +120,7 @@ export default function FeedPage() {
                   Rescue Credit
                 </span>
                 <span className="text-xs font-black text-foreground tabular-nums">
-                  {formatRupiah(45000)}
+                  {formatRupiah(creditBalance)}
                 </span>
               </div>
             </div>

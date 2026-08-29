@@ -35,32 +35,11 @@ interface PayoutHistoryItem {
   createdAt: string;
 }
 
-const MOCK_PAYOUT_HISTORY: PayoutHistoryItem[] = [
-  {
-    id: "po-001",
-    payoutNumber: "WD-20260828-0912",
-    amount: 850000,
-    bankName: "BCA",
-    accountNumber: "8271928401",
-    status: "COMPLETED",
-    createdAt: "2026-08-28T16:30:00.000Z",
-  },
-  {
-    id: "po-002",
-    payoutNumber: "WD-20260825-4421",
-    amount: 1240000,
-    bankName: "BCA",
-    accountNumber: "8271928401",
-    status: "COMPLETED",
-    createdAt: "2026-08-25T17:15:00.000Z",
-  },
-];
-
 export default function MerchantPayoutPage() {
   const router = useRouter();
-  const [availableBalance, setAvailableBalance] = useState(1485000);
+  const [availableBalance, setAvailableBalance] = useState(0);
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [history, setHistory] = useState<PayoutHistoryItem[]>(MOCK_PAYOUT_HISTORY);
+  const [history, setHistory] = useState<PayoutHistoryItem[]>([]);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);

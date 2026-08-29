@@ -26,32 +26,11 @@ import { formatDatetime, formatRupiah } from "@/lib/utils";
 import { consumerApi } from "@/lib/api-client";
 import type { CreditTransaction } from "@/types";
 
-const INITIAL_TRANSACTIONS: CreditTransaction[] = [
-  {
-    id: "tx-001",
-    creditId: "rc-001",
-    orderId: null,
-    amount: 22000,
-    balanceAfter: 45000,
-    type: "REFUND_IN",
-    description: "Refund 100% Instant Undo pesanan FR-20260828-0912",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-  },
-  {
-    id: "tx-002",
-    creditId: "rc-001",
-    orderId: null,
-    amount: -15000,
-    balanceAfter: 23000,
-    type: "PAYMENT_OUT",
-    description: "Pembayaran pesanan Artisan Sourdough",
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-  },
-];
+const INITIAL_TRANSACTIONS: CreditTransaction[] = [];
 
 export default function WalletPage() {
-  const [balance, setBalance] = useState(45000);
-  const [transactions, setTransactions] = useState<CreditTransaction[]>(INITIAL_TRANSACTIONS);
+  const [balance, setBalance] = useState(0);
+  const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [bankName, setBankName] = useState("BCA");
   const [accountNumber, setAccountNumber] = useState("");

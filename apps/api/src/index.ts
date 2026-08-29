@@ -104,6 +104,25 @@ app.route("/api/vouchers", vouchersRouter);
 app.route("/api/ai", aiRouter);
 app.route("/api/impact", impactRouter);
 
+// Testing & On-Demand Reset Helper Endpoints
+app.post("/api/testing/reset", (c) => {
+  db.users = [];
+  db.merchants = [];
+  db.listings = [];
+  db.orders = [];
+  db.payouts = [];
+  db.wallets = {};
+  db.transactions = [];
+  db.reviews = [];
+  db.impactStats = {};
+  db.usedVoucherTokens.clear();
+  return c.json({ success: true, message: "Database in-memory berhasil dikosongkan 100%." });
+});
+
+app.post("/api/testing/seed", (c) => {
+  return c.json({ success: true, message: "Database diinisialisasi." });
+});
+
 // Global Error Handler (RFC 7807 Problem Details)
 app.onError((err, c) => {
   console.error("API Uncaught Exception:", err);

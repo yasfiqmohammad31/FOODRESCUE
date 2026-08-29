@@ -32,10 +32,10 @@ const BADGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
 };
 
 const DEFAULT_STATS = {
-  totalPortionsSaved: 14,
-  totalCo2PreventedKg: 35.0,
-  totalMoneySaved: 320000,
-  treesEquivalent: 2.1,
+  totalPortionsSaved: 0,
+  totalCo2PreventedKg: 0,
+  totalMoneySaved: 0,
+  treesEquivalent: 0,
 };
 
 const USER_PROFILE = {
