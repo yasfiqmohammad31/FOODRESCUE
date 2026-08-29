@@ -59,6 +59,10 @@ export const merchantApi = {
     });
   },
 
+  async getProfile() {
+    return fetchMerchantApi("/api/merchants/profile");
+  },
+
   // Onboarding
   async submitStep1(data: {
     storeName: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -33,12 +33,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatRupiah } from "@/lib/utils";
 
-const USER_PROFILE = {
-  name: "Alex Pratama",
-  email: "alex@kampus.ac.id",
-  phone: "+6281234567890",
-  avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400",
-};
+interface UserProfile {
+  name: string;
+  email: string;
+  phone: string;
+  avatarUrl: string;
+}
 
 const ALLERGEN_OPTIONS = [
   "Gluten (Gandum/Tepung)",
@@ -50,12 +50,34 @@ const ALLERGEN_OPTIONS = [
 ];
 
 export default function ProfilePage() {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   // Modals state
   const [activeModal, setActiveModal] = useState<"SAFETY" | "HELP" | "ALLERGENS" | null>(null);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Load real authenticated user profile
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("fr_user");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setUser({
+            name: parsed.name || "Food Rescuer",
+            email: parsed.email || "user@kampus.ac.id",
+            phone: parsed.phone || "-",
+            avatarUrl: parsed.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400",
+          });
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }, []);
 
   const handleToggleAllergen = (item: string) => {
     if (selectedAllergens.includes(item)) {
@@ -73,23 +95,38 @@ export default function ProfilePage() {
     }, 800);
   };
 
+  const displayName = user?.name || "Pengguna Tamu";
+  const displayEmail = user?.email || "Belum masuk akun";
+  const displayPhone = user?.phone || "-";
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <div className="flex flex-col flex-1 p-4 pb-24 gap-4">
       {/* Profile Header */}
       <Card className="p-4 bg-card border-border shadow-2xs">
         <div className="flex items-center gap-3.5">
           <Avatar className="h-14 w-14 border-2 border-primary/40 shadow-xs">
-            <AvatarImage src={USER_PROFILE.avatarUrl} />
-            <AvatarFallback className="bg-primary/15 text-primary font-bold">AP</AvatarFallback>
+            <AvatarImage src={user?.avatarUrl} />
+            <AvatarFallback className="bg-primary/15 text-primary font-bold">{initials || "FR"}</AvatarFallback>
           </Avatar>
 
           <div className="flex-1">
             <div className="flex items-center gap-1.5">
-              <h1 className="text-base font-extrabold text-foreground">{USER_PROFILE.name}</h1>
-              <Badge className="bg-primary text-white text-[10px] py-0">Food Hero</Badge>
+              <h1 className="text-base font-extrabold text-foreground">{displayName}</h1>
+              {user && <Badge className="bg-primary text-white text-[10px] py-0">Food Hero</Badge>}
             </div>
-            <p className="text-xs text-muted-foreground">{USER_PROFILE.email}</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">{USER_PROFILE.phone}</p>
+            <p className="text-xs text-muted-foreground">{displayEmail}</p>
+            {user?.phone && <p className="text-[11px] text-muted-foreground mt-0.5">{displayPhone}</p>}
+            {!user && (
+              <Link href="/login" className="inline-block mt-1.5 text-xs font-bold text-primary hover:underline">
+                Masuk / Daftar Akun &rarr;
+              </Link>
+            )}
           </div>
         </div>
       </Card>
@@ -103,7 +140,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <span className="text-xs font-semibold text-emerald-100">Saldo Rescue Credit</span>
-              <div className="text-base font-black text-white tabular-nums">{formatRupiah(45000)}</div>
+              <div className="text-base font-black text-white tabular-nums">{formatRupiah(walletBalance)}</div>
             </div>
           </div>
           <ChevronRight className="h-5 w-5 text-emerald-200 group-hover:translate-x-0.5 transition-transform" />

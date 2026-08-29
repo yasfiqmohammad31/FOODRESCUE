@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -18,12 +18,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { merchantApi } from "@/lib/api-client";
+
 export default function MerchantSettingsPage() {
   const [isStoreOpen, setIsStoreOpen] = useState(true);
-  const [storeName, setStoreName] = useState("Artisan Bakery & Cafe");
+  const [storeName, setStoreName] = useState("");
   const [category, setCategory] = useState("Bakery & Pastry");
-  const [address, setAddress] = useState("Jl. Raya Darmo Permai No. 45, Surabaya");
-  const [description, setDescription] = useState("Artisan bakery & specialty sourdough dengan komitmen nol limbah pangan.");
+  const [address, setAddress] = useState("");
+  const [description, setDescription] = useState("");
 
   // Operational schedule
   const [openTime, setOpenTime] = useState("07:00");
@@ -34,12 +36,32 @@ export default function MerchantSettingsPage() {
 
   // Bank Disbursement Info
   const [bankName, setBankName] = useState("BCA");
-  const [accountNumber, setAccountNumber] = useState("8271928401");
-  const [accountHolder, setAccountHolder] = useState("Artisan Bakery Official");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountHolder, setAccountHolder] = useState("");
 
   // Validation Errors
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    merchantApi.getProfile().then((res) => {
+      if (isMounted && res.success && res.merchant) {
+        setStoreName(res.merchant.storeName || "");
+        setCategory(res.merchant.category || "Bakery & Pastry");
+        setAddress(res.merchant.address || "");
+        setOpenTime(res.merchant.openTime || "07:00");
+        setCloseTime(res.merchant.closeTime || "21:30");
+        setBankName(res.merchant.bankName || "BCA");
+        setAccountNumber(res.merchant.accountNumber || "");
+        setAccountHolder(res.merchant.accountHolder || "");
+        setIsStoreOpen(res.merchant.isStoreOpen ?? true);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const toggleDay = (day: string) => {
     if (operatingDays.includes(day)) {

@@ -73,6 +73,9 @@ export default function ConsumerLoginPage() {
       const res = await consumerApi.login(identifier, password, "CONSUMER");
       if (res.success && res.token) {
         localStorage.setItem("fr_token", res.token);
+        if (res.user) {
+          localStorage.setItem("fr_user", JSON.stringify(res.user));
+        }
         router.push("/feed");
       } else {
         setErrors({ identifier: res.message || "Kredensial tidak valid" });
@@ -87,9 +90,12 @@ export default function ConsumerLoginPage() {
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
     try {
-      const res = await consumerApi.googleAuth("google_oauth_token_alex", "CONSUMER");
+      const res = await consumerApi.googleAuth("google_oauth_token", "CONSUMER");
       if (res.success && res.token) {
         localStorage.setItem("fr_token", res.token);
+        if (res.user) {
+          localStorage.setItem("fr_user", JSON.stringify(res.user));
+        }
       }
       router.push("/feed");
     } catch {

@@ -38,11 +38,6 @@ const DEFAULT_STATS = {
   treesEquivalent: 0,
 };
 
-const USER_PROFILE = {
-  name: "Alex Pratama",
-  avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
-};
-
 const DEFAULT_BADGES: Badge[] = [
   {
     id: "bdg-01",
@@ -50,7 +45,6 @@ const DEFAULT_BADGES: Badge[] = [
     description: "Menyelamatkan porsi makanan surplus pertamamu.",
     iconUrl: "sprout",
     criteria: { type: "PORTIONS", threshold: 1 },
-    earnedAt: "2026-08-05T12:00:00Z",
   },
   {
     id: "bdg-02",
@@ -58,7 +52,6 @@ const DEFAULT_BADGES: Badge[] = [
     description: "Telah menyelamatkan 10 porsi makanan dari pembuangan.",
     iconUrl: "salad",
     criteria: { type: "PORTIONS", threshold: 10 },
-    earnedAt: "2026-08-22T19:30:00Z",
   },
   {
     id: "bdg-03",
@@ -66,24 +59,35 @@ const DEFAULT_BADGES: Badge[] = [
     description: "Mencegah minimal 50 kg emisi CO2e ke atmosfer.",
     iconUrl: "globe",
     criteria: { type: "CO2_SAVED", threshold: 50 },
-    progress: 70,
+    progress: 0,
   },
 ];
 
 export default function ImpactPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [userName, setUserName] = useState("Food Hero");
   const [stats, setStats] = useState(DEFAULT_STATS);
   const [badges, setBadges] = useState<Badge[]>(DEFAULT_BADGES);
 
   useEffect(() => {
     let isMounted = true;
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("fr_user");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed.name) setUserName(parsed.name);
+        } catch {}
+      }
+    }
+
     consumerApi.getImpact().then((res) => {
       if (isMounted && res.success && res.stats) {
         setStats({
-          totalPortionsSaved: res.stats.portionsSaved ?? 14,
-          totalCo2PreventedKg: res.stats.co2eSavedKg ?? 35.0,
-          totalMoneySaved: res.stats.moneySavedRp ?? 320000,
-          treesEquivalent: res.stats.treesEquivalent ?? 2.1,
+          totalPortionsSaved: res.stats.portionsSaved ?? 0,
+          totalCo2PreventedKg: res.stats.co2eSavedKg ?? 0,
+          totalMoneySaved: res.stats.moneySavedRp ?? 0,
+          treesEquivalent: res.stats.treesEquivalent ?? 0,
         });
         if (res.badges) setBadges(res.badges);
       }
@@ -110,26 +114,21 @@ export default function ImpactPage() {
       {/* Profile & Level Header */}
       <div className="flex items-center justify-between gap-3 rounded-2xl bg-card border border-border p-3 shadow-2xs">
         <div className="flex items-center gap-3">
-          <div className="relative h-11 w-11 shrink-0 rounded-xl overflow-hidden bg-[#F3EFE6] border border-primary/20">
-            <Image
-              src={USER_PROFILE.avatarUrl}
-              alt={USER_PROFILE.name}
-              fill
-              className="object-cover"
-            />
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/15 border border-primary/20 text-primary font-black text-sm">
+            {userName.slice(0, 2).toUpperCase()}
           </div>
 
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-[9px] font-black uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                LEVEL 12
+                LEVEL 1
               </span>
               <h1 className="text-xs font-black text-foreground">
-                {USER_PROFILE.name}
+                {userName}
               </h1>
             </div>
             <p className="text-[10px] text-muted-foreground mt-0.5">
-              Food Hero • Sejak Agustus 2026
+              Food Hero Aktif
             </p>
           </div>
         </div>

@@ -82,6 +82,9 @@ export default function ConsumerRegisterPage() {
       });
       if (res.success && res.token) {
         localStorage.setItem("fr_token", res.token);
+        if (res.user) {
+          localStorage.setItem("fr_user", JSON.stringify(res.user));
+        }
       }
       router.push("/feed");
     } catch {
@@ -94,9 +97,12 @@ export default function ConsumerRegisterPage() {
   const handleGoogleRegister = async () => {
     setIsGoogleLoading(true);
     try {
-      const res = await consumerApi.googleAuth("google_oauth_token_alex", "CONSUMER");
+      const res = await consumerApi.googleAuth("google_oauth_token", "CONSUMER");
       if (res.success && res.token) {
         localStorage.setItem("fr_token", res.token);
+        if (res.user) {
+          localStorage.setItem("fr_user", JSON.stringify(res.user));
+        }
       }
       router.push("/feed");
     } catch {
