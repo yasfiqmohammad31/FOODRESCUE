@@ -7,7 +7,7 @@
     "deploy": "wrangler deploy --minify",
     "deploy:prod": "wrangler deploy --minify",
     "deploy:dry-run": "wrangler deploy --dry-run",
-    "build": "tsc --noEmit",
+    "build": "echo 'API is hosted on Cloudflare Workers'",
     "type-check": "tsc --noEmit",
     "lint": "echo 'No lint errors in api'",
     "test": "tsx test/api.test.ts",
