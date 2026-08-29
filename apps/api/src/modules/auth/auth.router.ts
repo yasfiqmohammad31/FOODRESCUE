@@ -111,16 +111,82 @@ authRouter.post("/register", zValidator("json", registerSchema), async (c) => {
 
 // POST /auth/google
 authRouter.post("/google", zValidator("json", googleAuthSchema), async (c) => {
-  const { role } = c.req.valid("json");
+  const { idToken, role } = c.req.valid("json");
 
-  const user: User = {
-    id: role === "MERCHANT" ? "usr-mer-001" : "usr-cns-001",
-    email: role === "MERCHANT" ? "owner@artisanbakery.com" : "alex@kampus.ac.id",
-    name: role === "MERCHANT" ? "Budi Santoso" : "Alex Pratama",
-    phone: "+6281234567890",
-    role,
-    createdAt: new Date().toISOString(),
-  };
+  let googleEmail = "";
+  let googleName = "";
+
+  // Parse Google JWT ID Token payload (Base64Url)
+  try {
+    const parts = idToken.split(".");
+    if (parts.length >= 2) {
+      const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      const decoded = atob(base64);
+      const payload = JSON.parse(decoded);
+      if (payload.email) {
+        googleEmail = payload.email;
+        googleName = payload.name || payload.email.split("@")[0];
+      }
+    }
+  } catch {
+    // Fallback if raw mock string was passed
+  }
+
+  if (!googleEmail) {
+    googleEmail = role === "MERCHANT" ? "merchant.google@foodrescue.id" : "user.google@foodrescue.id";
+    googleName = role === "MERCHANT" ? "Mitra Merchant Google" : "Pengguna Google";
+  }
+
+  // Find or create user
+  let user = db.users.find((u) => u.email === googleEmail && u.role === role);
+  if (!user) {
+    user = {
+      id: `usr-g-${Date.now()}`,
+      email: googleEmail,
+      name: googleName,
+      phone: "+628120000000",
+      role,
+      createdAt: new Date().toISOString(),
+    };
+    db.users.push(user);
+
+    if (role === "CONSUMER") {
+      db.wallets[user.id] = {
+        userId: user.id,
+        balance: 0,
+        updatedAt: new Date().toISOString(),
+      };
+      db.impactStats[user.id] = {
+        userId: user.id,
+        portionsSaved: 0,
+        co2eSavedKg: 0,
+        treesEquivalent: 0,
+        moneySavedRp: 0,
+        updatedAt: new Date().toISOString(),
+      };
+    } else if (role === "MERCHANT") {
+      db.merchants.push({
+        id: `mer-${user.id}`,
+        userId: user.id,
+        storeName: googleName,
+        category: "Bakery & Pastry",
+        address: "Lokasi belum diatur",
+        location: { lat: -7.2856, lng: 112.6954 },
+        openTime: "08:00",
+        closeTime: "21:00",
+        operatingDays: ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"],
+        bankName: "BCA",
+        accountNumber: "0000000000",
+        accountHolder: googleName,
+        onboardingStep: 3,
+        isVerified: true,
+        isStoreOpen: true,
+        avgRating: 5.0,
+        totalReviews: 0,
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }
 
   const secret = c.env.JWT_ACCESS_SECRET || "foodrescue_jwt_secret";
   const token = await signJwt(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Lock, Mail, ShieldCheck, Store } from "lucide-react";
@@ -39,6 +39,17 @@ export default function MerchantLoginPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !document.getElementById("google-gsi-script")) {
+      const script = document.createElement("script");
+      script.id = "google-gsi-script";
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -79,6 +90,43 @@ export default function MerchantLoginPage() {
 
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
+    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+    if (typeof window !== "undefined" && (window as any).google?.accounts?.id && googleClientId) {
+      (window as any).google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async (response: { credential?: string }) => {
+          if (response.credential) {
+            try {
+              const res = await fetchMerchantApi("/api/auth/google", {
+                method: "POST",
+                body: JSON.stringify({ idToken: response.credential, role: "MERCHANT" }),
+              });
+              if (res.success && res.token) {
+                localStorage.setItem("fr_merchant_token", res.token);
+                router.push("/");
+              } else {
+                setErrors({ email: res.message || "Autentikasi Google gagal" });
+              }
+            } catch {
+              router.push("/");
+            } finally {
+              setIsGoogleLoading(false);
+            }
+          } else {
+            setIsGoogleLoading(false);
+          }
+        },
+      });
+
+      (window as any).google.accounts.id.prompt((notification: any) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          setIsGoogleLoading(false);
+        }
+      });
+      return;
+    }
+
     try {
       const res = await fetchMerchantApi("/api/auth/google", {
         method: "POST",

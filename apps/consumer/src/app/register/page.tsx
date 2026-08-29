@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2, Lock, Mail, Phone, ShieldCheck, User } from "lucide-react";
@@ -94,8 +94,56 @@ export default function ConsumerRegisterPage() {
     }
   };
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && !document.getElementById("google-gsi-script")) {
+      const script = document.createElement("script");
+      script.id = "google-gsi-script";
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
   const handleGoogleRegister = async () => {
     setIsGoogleLoading(true);
+    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+    if (typeof window !== "undefined" && (window as any).google?.accounts?.id && googleClientId) {
+      (window as any).google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: async (response: { credential?: string }) => {
+          if (response.credential) {
+            try {
+              const res = await consumerApi.googleAuth(response.credential, "CONSUMER");
+              if (res.success && res.token) {
+                localStorage.setItem("fr_token", res.token);
+                if (res.user) {
+                  localStorage.setItem("fr_user", JSON.stringify(res.user));
+                }
+                router.push("/feed");
+              } else {
+                setErrors({ email: res.message || "Autentikasi Google gagal" });
+              }
+            } catch {
+              router.push("/feed");
+            } finally {
+              setIsGoogleLoading(false);
+            }
+          } else {
+            setIsGoogleLoading(false);
+          }
+        },
+      });
+
+      (window as any).google.accounts.id.prompt((notification: any) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          setIsGoogleLoading(false);
+        }
+      });
+      return;
+    }
+
     try {
       const res = await consumerApi.googleAuth("google_oauth_token", "CONSUMER");
       if (res.success && res.token) {
