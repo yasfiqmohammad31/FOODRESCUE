@@ -60,7 +60,7 @@ export default function ConsumerForgotPasswordPage() {
 
     setIsLoading(true);
     try {
-      await consumerApi.sendOtp(identifier.trim(), authMethod);
+      await consumerApi.sendOtp(identifier.trim());
     } catch {
       // Fallback
     } finally {
@@ -117,7 +117,7 @@ export default function ConsumerForgotPasswordPage() {
     setOtpDigits(["", "", "", "", "", ""]);
     inputRefs.current[0]?.focus();
     try {
-      await consumerApi.sendOtp(identifier.trim(), authMethod);
+      await consumerApi.sendOtp(identifier.trim());
     } catch {
       // Fallback
     }
@@ -141,7 +141,7 @@ export default function ConsumerForgotPasswordPage() {
 
     setIsLoading(true);
     try {
-      const res = await consumerApi.verifyOtp(fullOtp, newPassword);
+      const res = await consumerApi.verifyOtp(identifier.trim(), fullOtp, newPassword);
       if (res.success) {
         setStep("SUCCESS");
       } else {

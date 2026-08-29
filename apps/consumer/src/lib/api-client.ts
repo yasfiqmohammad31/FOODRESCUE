@@ -155,17 +155,17 @@ export const consumerApi = {
     });
   },
 
-  async sendOtp(identifier: string, method: "phone" | "email" = "phone") {
-    return fetchApi("/api/auth/otp/send", {
+  async sendOtp(phone: string) {
+    return fetchApi<{ success: boolean; message: string; cooldownSeconds?: number; simulated?: boolean; debugCode?: string }>("/api/auth/otp/send", {
       method: "POST",
-      body: JSON.stringify({ identifier, method }),
+      body: JSON.stringify({ phone }),
     });
   },
 
-  async verifyOtp(code: string, newPassword?: string) {
-    return fetchApi("/api/auth/otp/verify", {
+  async verifyOtp(phone: string, code: string, newPassword?: string) {
+    return fetchApi<{ success: boolean; message: string }>("/api/auth/otp/verify", {
       method: "POST",
-      body: JSON.stringify({ code, newPassword }),
+      body: JSON.stringify({ phone, code, newPassword }),
     });
   },
 

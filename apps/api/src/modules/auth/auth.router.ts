@@ -3,6 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { db } from "../../db/mock-db";
 import { signJwt, sanitizeText } from "../../utils/security";
+import { sendWhatsAppOtp, verifyWhatsAppOtp } from "./whatsapp-otp.service";
 import type { Env, User } from "../../types";
 
 export const authRouter = new Hono<{ Bindings: Env }>();
@@ -24,6 +25,10 @@ const registerSchema = z.object({
 const googleAuthSchema = z.object({
   idToken: z.string().min(10),
   role: z.enum(["CONSUMER", "MERCHANT"]).default("CONSUMER"),
+});
+
+const sendOtpSchema = z.object({
+  phone: z.string().min(10),
 });
 
 const otpSchema = z.object({
@@ -203,22 +208,24 @@ authRouter.post("/google", zValidator("json", googleAuthSchema), async (c) => {
 });
 
 // POST /auth/otp/send
-authRouter.post("/otp/send", async (c) => {
-  return c.json({
-    success: true,
-    message: "Kode OTP 6-digit berhasil dikirim via WhatsApp.",
-    cooldownSeconds: 60,
-  });
+authRouter.post("/otp/send", zValidator("json", sendOtpSchema), async (c) => {
+  const { phone } = c.req.valid("json");
+  const result = await sendWhatsAppOtp(c.env, phone);
+  if (!result.success) {
+    return c.json(result, 400);
+  }
+  return c.json(result);
 });
 
 // POST /auth/otp/verify
 authRouter.post("/otp/verify", zValidator("json", otpSchema), async (c) => {
-  const { code } = c.req.valid("json");
-  if (code.length !== 6) {
-    return c.json({ success: false, message: "Kode OTP harus 6 digit angka." }, 400);
+  const { phone, code } = c.req.valid("json");
+  const result = await verifyWhatsAppOtp(c.env, phone, code);
+  if (!result.valid) {
+    return c.json({ success: false, message: result.message }, 400);
   }
   return c.json({
     success: true,
-    message: "Verifikasi OTP berhasil.",
+    message: result.message,
   });
 });

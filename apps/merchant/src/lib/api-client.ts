@@ -184,4 +184,19 @@ export const merchantApi = {
   async getSurplusPrediction() {
     return fetchMerchantApi("/api/ai/surplus-prediction");
   },
+
+  // Auth & OTP
+  async sendOtp(phone: string) {
+    return fetchMerchantApi<{ success: boolean; message: string; cooldownSeconds?: number; simulated?: boolean; debugCode?: string }>("/api/auth/otp/send", {
+      method: "POST",
+      body: JSON.stringify({ phone }),
+    });
+  },
+
+  async verifyOtp(phone: string, code: string, newPassword?: string) {
+    return fetchMerchantApi<{ success: boolean; message: string }>("/api/auth/otp/verify", {
+      method: "POST",
+      body: JSON.stringify({ phone, code, newPassword }),
+    });
+  },
 };

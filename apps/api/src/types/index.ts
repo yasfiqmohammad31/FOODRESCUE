@@ -6,6 +6,7 @@ export interface Env {
   XENDIT_CALLBACK_TOKEN: string;
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
+  FONNTE_TOKEN?: string;
   CACHE_KV?: KVNamespace;
   FOOD_STORAGE_R2?: R2Bucket;
   AI?: any; // Cloudflare Workers AI binding
