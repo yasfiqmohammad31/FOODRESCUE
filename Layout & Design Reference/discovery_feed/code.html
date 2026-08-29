@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Urban Pantry - Discovery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "on-secondary-fixed": "#3e001d",
+                            "on-background": "#1d1b1b",
+                            "tertiary": "#8d0048",
+                            "on-tertiary-fixed-variant": "#8e0049",
+                            "error": "#ba1a1a",
+                            "on-secondary-fixed-variant": "#851b49",
+                            "tertiary-fixed-dim": "#ffb1c7",
+                            "surface-bright": "#fff8f7",
+                            "secondary-fixed-dim": "#ffb1c7",
+                            "outline-variant": "#dbc0c6",
+                            "on-primary-fixed-variant": "#851b49",
+                            "secondary-container": "#fd7ba8",
+                            "inverse-on-surface": "#f6efef",
+                            "on-primary-container": "#ffc9d7",
+                            "primary-fixed-dim": "#ffb1c7",
+                            "on-surface": "#1d1b1b",
+                            "on-error-container": "#93000a",
+                            "on-primary-fixed": "#3e001d",
+                            "surface-container-high": "#ede7e6",
+                            "surface-variant": "#e7e1e0",
+                            "on-error": "#ffffff",
+                            "surface-tint": "#a43561",
+                            "error-container": "#ffdad6",
+                            "tertiary-container": "#b11d60",
+                            "primary-container": "#a33460",
+                            "surface-container": "#f3ecec",
+                            "inverse-primary": "#ffb1c7",
+                            "on-tertiary-container": "#ffc9d7",
+                            "secondary-fixed": "#ffd9e2",
+                            "on-surface-variant": "#554247",
+                            "tertiary-fixed": "#ffd9e2",
+                            "on-tertiary-fixed": "#3e001d",
+                            "on-secondary-container": "#760c3d",
+                            "surface": "#fff8f7",
+                            "inverse-surface": "#323030",
+                            "surface-dim": "#dfd9d8",
+                            "secondary": "#a43560",
+                            "background": "#fff8f7",
+                            "primary-fixed": "#ffd9e2",
+                            "on-tertiary": "#ffffff",
+                            "on-primary": "#ffffff",
+                            "on-secondary": "#ffffff",
+                            "primary": "#841a48",
+                            "outline": "#887177",
+                            "surface-container-low": "#f9f2f1",
+                            "surface-container-highest": "#e7e1e0",
+                            "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {
+                            "xs": "4px",
+                            "xl": "32px",
+                            "margin-mobile": "16px",
+                            "gutter": "16px",
+                            "margin-desktop": "48px",
+                            "base": "4px",
+                            "sm": "8px",
+                            "md": "16px",
+                            "lg": "24px"
+                    },
+                    "fontFamily": {
+                            "display": ["Geist Sans", "sans-serif"],
+                            "headline-lg-mobile": ["Geist Sans", "sans-serif"],
+                            "headline-lg": ["Geist Sans", "sans-serif"],
+                            "body-sm": ["Geist Sans", "sans-serif"],
+                            "title-md": ["Geist Sans", "sans-serif"],
+                            "body-lg": ["Geist Sans", "sans-serif"],
+                            "label-caps": ["Geist Sans", "sans-serif"]
+                    },
+                    "fontSize": {
+                            "display": ["40px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "900"}],
+                            "headline-lg-mobile": ["28px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                            "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                            "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                            "title-md": ["20px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                            "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                            "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;700;800;900&display=swap');
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+        
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Ambient Occlusion Shadows */
+        .shadow-ambient {
+            box-shadow: 0px 4px 20px oklch(0 0 0 / 0.04);
+        }
+        .shadow-elevated {
+            box-shadow: 0px 8px 32px oklch(0 0 0 / 0.08);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-lg antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen flex flex-col">
+<!-- TopAppBar (Mobile & Desktop) -->
+<header class="fixed top-0 w-full bg-background z-50 flex justify-between items-center h-16 px-margin-mobile pt-safe md:hidden">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary" data-icon="location_on" data-weight="fill" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant">NEARBY</span>
+<span class="font-title-md text-title-md text-primary font-bold">Universitas Indonesia <span class="text-sm bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded-full ml-1">2km</span></span>
+</div>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant/50 transition-colors duration-200">
+<span class="material-symbols-outlined text-primary" data-icon="search">search</span>
+</button>
+</header>
+<!-- Desktop Nav Cluster (Hidden on mobile) -->
+<header class="hidden md:flex fixed top-0 w-full bg-background z-50 justify-between items-center h-20 px-margin-desktop border-b border-surface-variant/20 shadow-ambient">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="eco" data-weight="fill" style="font-variation-settings: 'FILL' 1;">eco</span>
+<span class="font-display text-display text-primary font-bold">Urban Pantry</span>
+</div>
+<nav class="flex gap-lg">
+<a class="text-primary font-title-md text-title-md flex items-center gap-2 px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full" href="#"><span class="material-symbols-outlined" data-icon="explore">explore</span>Explore</a>
+<a class="text-on-surface-variant hover:text-primary font-title-md text-title-md flex items-center gap-2 px-4 py-2 transition-colors" href="#"><span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>Orders</a>
+<a class="text-on-surface-variant hover:text-primary font-title-md text-title-md flex items-center gap-2 px-4 py-2 transition-colors" href="#"><span class="material-symbols-outlined" data-icon="eco">eco</span>Impact</a>
+<a class="text-on-surface-variant hover:text-primary font-title-md text-title-md flex items-center gap-2 px-4 py-2 transition-colors" href="#"><span class="material-symbols-outlined" data-icon="person">person</span>Profile</a>
+</nav>
+<div class="flex items-center gap-md">
+<div class="flex items-center gap-xs bg-surface-container rounded-full px-4 py-2 cursor-pointer hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="location_on">location_on</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Universitas Indonesia (2km)</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-[80px] md:pt-[100px] pb-[100px] md:pb-xl px-margin-mobile md:px-margin-desktop max-w-[1200px] mx-auto w-full flex flex-col gap-lg md:gap-xl">
+<!-- Hero Section (Bento Grid Style) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<!-- Main Hero Card -->
+<div class="md:col-span-2 relative overflow-hidden rounded-xl bg-surface-container-low min-h-[240px] flex flex-col justify-end p-md md:p-lg group cursor-pointer">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A warm, inviting close-up of a rustic woven basket filled with fresh, golden-brown artisanal bread and pastries, bathed in soft morning sunlight streaming through a nearby window. The setting implies a cozy, community-focused bakery, emphasizing natural textures, abundant relief, and a restorative, savory aesthetic. The lighting is bright and modern, creating a comforting light-mode atmosphere with soft, diffused shadows." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuByBBtErMhXylrPOO9gjcS3S2TBqIDfT0LbUaKRQh-PQjg9hSIPGOQHfl7xzPEnuDUhVtWiXf-iJrO0XVbmCTE74Mm3hOtENcSBNfRLLJnOiqiowtWDCtbOJ4hKu3mNPdkkdWeqm-wrLXz_xH2J0AOBcaUC-f28D9zRva5Agcfq7yK1SyhIsTD_wPAGdED13M5HWoAEneT3hoh3TZsHZr0hQQ_2hUNuJk8xXDm5dLfxPXbwnLLv2rdzQQ')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+<div class="relative z-10">
+<span class="inline-block bg-primary text-on-primary font-label-caps text-label-caps px-3 py-1 rounded-full mb-xs backdrop-blur-sm bg-opacity-90">RESCUE TODAY</span>
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-white mb-2 max-w-sm">Rescue your first meal today.</h1>
+<p class="font-body-sm text-body-sm text-surface-bright/90">Good food shouldn't go to waste.</p>
+</div>
+</div>
+<!-- Impact Stat Card -->
+<div class="bg-surface rounded-xl p-md flex flex-col justify-between shadow-ambient border-t-4 border-primary">
+<div>
+<div class="flex items-center gap-2 mb-sm text-primary">
+<span class="material-symbols-outlined" data-icon="energy_savings_leaf" data-weight="fill" style="font-variation-settings: 'FILL' 1;">energy_savings_leaf</span>
+<h3 class="font-title-md text-title-md">Community Impact</h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">Together we've saved:</p>
+</div>
+<div>
+<div class="font-display text-display text-primary">1,240<span class="text-2xl font-bold">kg</span></div>
+<p class="font-label-caps text-label-caps text-on-surface-variant uppercase mt-1 tracking-wider">CO2 saved this week</p>
+</div>
+</div>
+</section>
+<!-- Categories -->
+<section>
+<div class="flex items-center justify-between mb-sm">
+<h2 class="font-title-md text-title-md font-bold text-on-background">Explore by Category</h2>
+</div>
+<div class="flex overflow-x-auto pb-sm -mx-margin-mobile px-margin-mobile md:mx-0 md:px-0 gap-sm hide-scrollbar">
+<!-- Bakery -->
+<button class="flex flex-col items-center gap-2 min-w-[80px] group">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors duration-300">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container text-3xl" data-icon="bakery_dining">bakery_dining</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant group-hover:text-on-background transition-colors">Bakery</span>
+</button>
+<!-- Cafe -->
+<button class="flex flex-col items-center gap-2 min-w-[80px] group">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors duration-300">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container text-3xl" data-icon="coffee">coffee</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant group-hover:text-on-background transition-colors">Cafe</span>
+</button>
+<!-- Meals -->
+<button class="flex flex-col items-center gap-2 min-w-[80px] group">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container transition-colors duration-300">
+<span class="material-symbols-outlined text-primary group-hover:text-on-primary-container text-3xl" data-icon="restaurant">restaurant</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant group-hover:text-on-background transition-colors">Meals</span>
+</button>
+<!-- Mystery Box (Amber Theme - simulated with secondary colors) -->
+<button class="flex flex-col items-center gap-2 min-w-[80px] group">
+<div class="w-16 h-16 rounded-full bg-[#fcd34d] flex items-center justify-center shadow-[0_0_15px_rgba(252,211,77,0.4)] group-hover:scale-105 transition-transform duration-300">
+<span class="material-symbols-outlined text-[#78350f] text-3xl" data-icon="redeem" data-weight="fill" style="font-variation-settings: 'FILL' 1;">redeem</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-background font-medium">Mystery Box</span>
+</button>
+</div>
+</section>
+<!-- Feed List -->
+<section class="flex flex-col gap-md">
+<div class="flex items-center justify-between">
+<h2 class="font-title-md text-title-md font-bold text-on-background">Nearby Rescues</h2>
+<button class="font-label-caps text-label-caps text-primary hover:underline">VIEW ALL</button>
+</div>
+<!-- Item 1 -->
+<article class="bg-surface rounded-[14px] shadow-ambient overflow-hidden flex flex-col md:flex-row group cursor-pointer border border-surface-variant/30 transition-transform active:translate-y-px hover:shadow-elevated">
+<div class="relative h-48 md:h-auto md:w-1/3 shrink-0 overflow-hidden">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="A brightly lit, aesthetic display counter in a modern, warm bakery, showing an assortment of artisan breads and pastries neatly arranged. The setting is a tactile-modern space with natural wood elements and sandstone textures, evoking a sense of abundant relief and restorative calm. Soft ambient occlusion shadows give depth to the delicious, savory treats." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDvgRlY8WNqIzlfZanX64rPErUBMlhArkMAzTacfcqIdkbe1UgZs46eCH1L7Lm3H-Gdjt21Mim-18wC13Js_zvKPgvQ9mZGkEmB7YDuIiDO5kGWHuag1zoTVZa78N-dom9uh39Xb0Hf1KhiC7SI7mTWwA_xstfit1KO_40D86l8h7-7c0PzP8y1sRFH4BjGE88zvaxlbXBXi3slJth9698T_u_mjAGYa16pXT55aSX1buQZxKHoHb5RXQ')"></div>
+<div class="absolute top-2 left-2 bg-[#fcd34d] text-[#78350f] font-label-caps text-label-caps px-2 py-1 rounded-[10px] flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[14px]" data-icon="redeem" data-weight="fill" style="font-variation-settings: 'FILL' 1;">redeem</span>
+                        Mystery Box
+                    </div>
+<div class="absolute top-2 right-2 bg-surface/90 backdrop-blur-sm text-on-surface font-label-caps text-label-caps px-2 py-1 rounded-[10px] flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[14px]" data-icon="inventory_2">inventory_2</span>
+                        3 left
+                    </div>
+</div>
+<div class="p-md flex flex-col justify-between flex-grow">
+<div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-title-md text-title-md font-bold text-on-background">Morning Glory Bakery</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant bg-surface-container px-2 py-1 rounded-full flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="directions_walk">directions_walk</span>0.8km</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-2">Assorted breads &amp; pastries from today's batch.</p>
+<div class="flex items-center gap-1 text-primary font-body-sm text-body-sm mb-4">
+<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span>
+                            Pickup 17:00 - 19:00
+                        </div>
+</div>
+<div class="flex items-end justify-between mt-2 pt-2 border-t border-surface-variant/30">
+<div>
+<span class="font-body-sm text-body-sm text-on-surface-variant line-through mr-2">Rp45.000</span>
+<span class="font-title-md text-title-md font-bold text-on-background">Rp15.000</span>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-on-primary h-[48px] px-lg rounded-[12px] font-title-md text-title-md transition-colors flex items-center gap-2 active:translate-y-px shadow-sm">
+                            Rescue <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Item 2 -->
+<article class="bg-surface rounded-[14px] shadow-ambient overflow-hidden flex flex-col md:flex-row group cursor-pointer border border-surface-variant/30 transition-transform active:translate-y-px hover:shadow-elevated">
+<div class="relative h-48 md:h-auto md:w-1/3 shrink-0 overflow-hidden">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="A close-up view of a minimalist cafe setting with a focus on a paper bag holding a surplus pastry set, sitting on a clean sandstone-colored table. Beside it is a ceramic cup of coffee. The lighting is soft and natural, emphasizing the organic, edible nature of the food and the warm, welcoming aesthetic of a community-focused sanctuary. High-quality, modern light-mode photography." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDcY9H2_IzidlqYieifqIkygwMKKNptuMRnpuug4YyY6xAQoCzRvk6kv7AXZNUHaQStbV0O5aJOocA9n_RjLRreX1PsLH27xrwPwve_fvuo7gsy-yoQKe7ZqJ5Tts56m0CDhK7FrDXF2a-8LO6XINsG9zczzbyDqvR9DxfgJ35WfANM3qKojtWCadMTXW0-agdhVp9ErtpeqhsnrG-v7cWJKX6N-jST-kmmYFNExMJped_6Dpav3PRe7Q')"></div>
+<div class="absolute top-2 right-2 bg-surface/90 backdrop-blur-sm text-on-surface font-label-caps text-label-caps px-2 py-1 rounded-[10px] flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[14px]" data-icon="inventory_2">inventory_2</span>
+                        5 left
+                    </div>
+</div>
+<div class="p-md flex flex-col justify-between flex-grow">
+<div>
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-title-md text-title-md font-bold text-on-background">Kopi Kenangan</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant bg-surface-container px-2 py-1 rounded-full flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="directions_walk">directions_walk</span>1.2km</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-2">Surplus Pastry Set (Croissant &amp; Danish)</p>
+<!-- Shelf-life urgency bar (Terracotta Red simulated with error colors) -->
+<div class="mb-4">
+<div class="flex items-center justify-between font-label-caps text-label-caps text-error mb-1">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="timer">timer</span>Expiring soon</span>
+<span>Pickup Now</span>
+</div>
+<div class="w-full h-1.5 bg-error-container rounded-full overflow-hidden">
+<div class="w-1/4 h-full bg-error rounded-full animate-pulse"></div>
+</div>
+</div>
+</div>
+<div class="flex items-end justify-between mt-2 pt-2 border-t border-surface-variant/30">
+<div>
+<span class="font-body-sm text-body-sm text-on-surface-variant line-through mr-2">Rp30.000</span>
+<span class="font-title-md text-title-md font-bold text-on-background">Rp12.000</span>
+</div>
+<button class="bg-primary hover:bg-primary/90 text-on-primary h-[48px] px-lg rounded-[12px] font-title-md text-title-md transition-colors flex items-center gap-2 active:translate-y-px shadow-sm">
+                            Rescue <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</article>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-4 pb-safe bg-surface dark:bg-surface-dim shadow-[0px_-4px_20px_rgba(0,0,0,0.04)] rounded-t-xl md:hidden">
+<!-- Explore (Active) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 hover:opacity-80 active:translate-y-px transition-all duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="explore" data-weight="fill" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="font-label-caps text-label-caps mt-1">Explore</span>
+</a>
+<!-- Orders -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:opacity-80 active:translate-y-px transition-all duration-150 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors" data-icon="receipt_long">receipt_long</span>
+<span class="font-label-caps text-label-caps mt-1 group-hover:text-primary transition-colors">Orders</span>
+</a>
+<!-- Impact -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:opacity-80 active:translate-y-px transition-all duration-150 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors" data-icon="eco">eco</span>
+<span class="font-label-caps text-label-caps mt-1 group-hover:text-primary transition-colors">Impact</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:opacity-80 active:translate-y-px transition-all duration-150 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors" data-icon="person">person</span>
+<span class="font-label-caps text-label-caps mt-1 group-hover:text-primary transition-colors">Profile</span>
+</a>
+</nav>
+</body></html>

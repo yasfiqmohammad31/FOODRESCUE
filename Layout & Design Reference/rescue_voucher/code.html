@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Active Rescue Voucher - Urban Pantry</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#3e001d",
+                        "on-background": "#1d1b1b",
+                        "tertiary": "#8d0048",
+                        "on-tertiary-fixed-variant": "#8e0049",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#851b49",
+                        "tertiary-fixed-dim": "#ffb1c7",
+                        "surface-bright": "#fff8f7",
+                        "secondary-fixed-dim": "#ffb1c7",
+                        "outline-variant": "#dbc0c6",
+                        "on-primary-fixed-variant": "#851b49",
+                        "secondary-container": "#fd7ba8",
+                        "inverse-on-surface": "#f6efef",
+                        "on-primary-container": "#ffc9d7",
+                        "primary-fixed-dim": "#ffb1c7",
+                        "on-surface": "#1d1b1b",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#3e001d",
+                        "surface-container-high": "#ede7e6",
+                        "surface-variant": "#e7e1e0",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#a43561",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#b11d60",
+                        "primary-container": "#a33460",
+                        "surface-container": "#f3ecec",
+                        "inverse-primary": "#ffb1c7",
+                        "on-tertiary-container": "#ffc9d7",
+                        "secondary-fixed": "#ffd9e2",
+                        "on-surface-variant": "#554247",
+                        "tertiary-fixed": "#ffd9e2",
+                        "on-tertiary-fixed": "#3e001d",
+                        "on-secondary-container": "#760c3d",
+                        "surface": "#fff8f7",
+                        "inverse-surface": "#323030",
+                        "surface-dim": "#dfd9d8",
+                        "secondary": "#a43560",
+                        "background": "#fff8f7",
+                        "primary-fixed": "#ffd9e2",
+                        "on-tertiary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "primary": "#841a48",
+                        "outline": "#887177",
+                        "surface-container-low": "#f9f2f1",
+                        "surface-container-highest": "#e7e1e0",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "xl": "32px",
+                        "margin-mobile": "16px",
+                        "gutter": "16px",
+                        "margin-desktop": "48px",
+                        "base": "4px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "display": ["Geist Sans"],
+                        "headline-lg-mobile": ["Geist Sans"],
+                        "headline-lg": ["Geist Sans"],
+                        "body-sm": ["Geist Sans"],
+                        "title-md": ["Geist Sans"],
+                        "body-lg": ["Geist Sans"],
+                        "label-caps": ["Geist Sans"]
+                    },
+                    "fontSize": {
+                        "display": ["40px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "900" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "1.2", "fontWeight": "800" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "title-md": ["20px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Geist Sans', sans-serif; }
+        .progress-bar-animation {
+            animation: progress 30s linear infinite;
+        }
+        @keyframes progress {
+            0% { width: 100%; }
+            100% { width: 0%; }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased min-h-screen pb-safe pb-24">
+<!-- Intent: Transactional/Task-Focused. Navigation shell is suppressed per guidelines. -->
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-background flex justify-between items-center h-16 px-margin-mobile">
+<button class="text-primary p-2 -ml-2 rounded-full hover:bg-surface-variant/50 transition-colors duration-200">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<span class="font-display text-title-md font-bold text-primary">Urban Pantry</span>
+<div class="w-10"></div> <!-- Placeholder for balance -->
+</header>
+<main class="pt-20 px-margin-mobile pb-lg max-w-md mx-auto space-y-6">
+<!-- Header Section -->
+<div class="text-center space-y-2">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background">Your Rescue is Ready</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Order #UP-8492-B</p>
+</div>
+<!-- Voucher Card (Glassmorphism/Tactile) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] overflow-hidden border border-surface-variant/30">
+<!-- Merchant Info -->
+<div class="p-lg border-b border-surface-variant/50 bg-surface-container-low">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full overflow-hidden shrink-0 border-2 border-surface">
+<img class="w-full h-full object-cover" data-alt="A close up, high quality photo of a modern, warm cafe interior with wooden accents and warm lighting. The aesthetic is tactile and purposeful, fitting a cozy community food rescue app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRE9hZp9t_2yLr47JBtaTcOX1BeaH854yQuFTzYaKREJHZ3s8iNs6uo6oXkdtx4wdrjBj9_3XsO1c436NUMnVeg26u_gwn0DTt2263M04-dCo4JwIGkgZpfCRWJwytdTyT4uS7Sk6mTUyQpfF15NY_5WGywiDwcmODhWg2zdJDLvHyg3zcAnZecFtf4fowybVys3s5eVsrBkipFtsWGaiEhs9XTvrMdw9hVRuOJvmj90Z4SMj6thdiYg"/>
+</div>
+<div>
+<h2 class="font-title-md text-title-md text-on-background">Kopi Kenangan</h2>
+<div class="flex items-center gap-1 text-on-surface-variant mt-1">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span class="font-body-sm text-body-sm">Pickup Today: 18:00 - 20:00</span>
+</div>
+</div>
+</div>
+</div>
+<!-- QR Code Section -->
+<div class="p-lg flex flex-col items-center justify-center space-y-6 bg-surface-bright relative">
+<div class="text-center max-w-[200px]">
+<p class="font-body-lg text-body-lg text-on-background font-medium">Show this at the counter to pickup your food.</p>
+</div>
+<!-- Anti-Fraud QR Container -->
+<div class="relative w-64 h-64 bg-surface rounded-lg flex items-center justify-center shadow-inner border border-outline-variant p-4">
+<!-- Simulated QR Code placeholder -->
+<div class="w-full h-full border-4 border-dashed border-primary/30 flex items-center justify-center rounded">
+<span class="material-symbols-outlined text-4xl text-primary/50">qr_code_scanner</span>
+</div>
+<!-- Decorative corner markers for QR -->
+<div class="absolute top-2 left-2 w-6 h-6 border-t-4 border-l-4 border-primary rounded-tl"></div>
+<div class="absolute top-2 right-2 w-6 h-6 border-t-4 border-r-4 border-primary rounded-tr"></div>
+<div class="absolute bottom-2 left-2 w-6 h-6 border-b-4 border-l-4 border-primary rounded-bl"></div>
+<div class="absolute bottom-2 right-2 w-6 h-6 border-b-4 border-r-4 border-primary rounded-br"></div>
+</div>
+<!-- 30s Refresh Bar -->
+<div class="w-full max-w-[256px] space-y-2">
+<div class="flex justify-between items-center px-1">
+<span class="font-label-caps text-label-caps text-on-surface-variant">Code refreshes in</span>
+<span class="font-label-caps text-label-caps text-primary">30s</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full progress-bar-animation origin-left"></div>
+</div>
+</div>
+</div>
+<!-- Mystery Box Tag -->
+<div class="bg-secondary-container px-lg py-sm flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-on-secondary-container text-sm" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-label-caps text-label-caps text-on-secondary-container">Mystery Box Rescue</span>
+</div>
+</div>
+<!-- Map Snippet -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] p-md space-y-4">
+<h3 class="font-title-md text-title-md text-on-background">Location</h3>
+<div class="w-full h-40 bg-surface-container rounded-lg overflow-hidden relative">
+<!-- Using data-location for map as requested -->
+<img class="w-full h-full object-cover" data-alt="A stylized, clean digital map interface showing a street view of a city neighborhood in Jakarta. The map uses a soft, light-mode color palette with muted sandstone roads and subtle emerald green park areas, maintaining the tactile modern aesthetic of the Urban Pantry brand." data-location="Jakarta" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSdmJIlJYgicCNG_UzgANfQ9T0otexlIG26JvQiDKNDR_IJSVjmp2O1v4PhI_3KmfhmLAG_GVX-RgAIzh6JIwYjy2_42eiifqvT2QmGr2pvu_363erXLjcTdwq_KyCUKerRs8VpuqCVnrePSnzaYfFBZe_cc_HeBO6jsYe5Rvhlg7steq7og6lauswH005j6f3ejwegns8pBEsJhPfZU9ZoKNDEi4XhXgdqtC8XPu7jqv66N_HqpaxzA"/>
+<!-- Floating Map Pin -->
+<div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+<span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1; text-shadow: 0 4px 12px rgba(132, 26, 72, 0.4);">location_on</span>
+</div>
+</div>
+<div class="flex justify-between items-center">
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Jl. Senopati No.43, RT.6/RW.3, Senayan, Kebayoran Baru.</p>
+<button class="shrink-0 bg-primary/10 text-primary px-4 py-2 rounded-full font-label-caps text-label-caps hover:bg-primary/20 transition-colors">
+                     Get Directions
+                 </button>
+</div>
+</div>
+<!-- Impact Footer -->
+<div class="bg-primary/5 border border-primary/10 rounded-xl p-md flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary" style="font-variation-settings: 'FILL' 1;">eco</span>
+</div>
+<div>
+<p class="font-title-md text-title-md text-primary">Impact Achieved</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">This order saved <span class="font-bold">0.5kg of CO2</span> from entering the atmosphere.</p>
+</div>
+</div>
+<!-- Primary Action (Just in case, though usually this screen is static until scanned) -->
+<button class="w-full bg-surface-container text-on-surface py-3 rounded-xl font-title-md text-title-md flex items-center justify-center gap-2 hover:bg-surface-variant transition-colors border border-outline/20">
+<span class="material-symbols-outlined">help</span> Need Help?
+        </button>
+</main>
+</body></html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Listing Details - Urban Pantry</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#3e001d",
+                        "on-background": "#1d1b1b",
+                        "tertiary": "#8d0048",
+                        "on-tertiary-fixed-variant": "#8e0049",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#851b49",
+                        "tertiary-fixed-dim": "#ffb1c7",
+                        "surface-bright": "#fff8f7",
+                        "secondary-fixed-dim": "#ffb1c7",
+                        "outline-variant": "#dbc0c6",
+                        "on-primary-fixed-variant": "#851b49",
+                        "secondary-container": "#fd7ba8",
+                        "inverse-on-surface": "#f6efef",
+                        "on-primary-container": "#ffc9d7",
+                        "primary-fixed-dim": "#ffb1c7",
+                        "on-surface": "#1d1b1b",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#3e001d",
+                        "surface-container-high": "#ede7e6",
+                        "surface-variant": "#e7e1e0",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#a43561",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#b11d60",
+                        "primary-container": "#a33460",
+                        "surface-container": "#f3ecec",
+                        "inverse-primary": "#ffb1c7",
+                        "on-tertiary-container": "#ffc9d7",
+                        "secondary-fixed": "#ffd9e2",
+                        "on-surface-variant": "#554247",
+                        "tertiary-fixed": "#ffd9e2",
+                        "on-tertiary-fixed": "#3e001d",
+                        "on-secondary-container": "#760c3d",
+                        "surface": "#fff8f7",
+                        "inverse-surface": "#323030",
+                        "surface-dim": "#dfd9d8",
+                        "secondary": "#a43560",
+                        "background": "#fff8f7",
+                        "primary-fixed": "#ffd9e2",
+                        "on-tertiary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "primary": "#841a48",
+                        "outline": "#887177",
+                        "surface-container-low": "#f9f2f1",
+                        "surface-container-highest": "#e7e1e0",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "xl": "32px",
+                        "margin-mobile": "16px",
+                        "gutter": "16px",
+                        "margin-desktop": "48px",
+                        "base": "4px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "display": ["Geist Sans"],
+                        "headline-lg-mobile": ["Geist Sans"],
+                        "headline-lg": ["Geist Sans"],
+                        "body-sm": ["Geist Sans"],
+                        "title-md": ["Geist Sans"],
+                        "body-lg": ["Geist Sans"],
+                        "label-caps": ["Geist Sans"]
+                    },
+                    "fontSize": {
+                        "display": ["40px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "900" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "1.2", "fontWeight": "800" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-sm": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                        "title-md": ["20px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Mobile safe area padding for sticky bottom bar */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-lg antialiased">
+<!-- Content Canvas -->
+<main class="w-full max-w-[1200px] mx-auto min-h-screen relative md:pb-24">
+<!-- Hero Image Section (Full width on mobile, constrained on desktop) -->
+<div class="relative w-full h-[350px] md:h-[450px] md:rounded-b-3xl overflow-hidden shadow-sm">
+<!-- Back Button Overlay -->
+<button class="absolute top-margin-mobile left-margin-mobile z-10 w-10 h-10 bg-surface/80 backdrop-blur-md rounded-full flex items-center justify-center text-on-surface shadow-sm active:translate-y-px transition-all duration-150">
+<span class="material-symbols-outlined text-title-md">arrow_back</span>
+</button>
+<!-- Favorite Button Overlay -->
+<button class="absolute top-margin-mobile right-margin-mobile z-10 w-10 h-10 bg-surface/80 backdrop-blur-md rounded-full flex items-center justify-center text-on-surface shadow-sm active:translate-y-px transition-all duration-150">
+<span class="material-symbols-outlined text-title-md">favorite_border</span>
+</button>
+<!-- Image Content -->
+<img class="w-full h-full object-cover" data-alt="A beautifully lit, appetizing overhead shot of a diverse selection of freshly baked surplus pastries arranged casually on a rustic wooden board. The collection includes golden, flaky croissants, fruit-topped danishes, and pain au chocolat. Soft, warm natural light spills across the scene, highlighting the textures and rich buttery colors of the baked goods against a clean, modern white background aesthetic. The mood is warm, abundant, and deeply restorative, fitting for a premium food rescue app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvr6y4aaFrYaLluU8r8xSM14WUdMGkk8oDuHZFCF_X9FVxGwj8y5Y1hXxlOdEjzCNJdSNZkAsnUBxlwcFqXYYQ2NrUK-Yh5WGg24L1oxDMuUXlrUUcZjLkShNu2XT8LY48fFsaPpUl-ng2INkp_YU4OHx99d5KpnRApEkcq_d2Qz1eBkfSqEmwKmq2H4RKu2NmVtXfNKw3SK3BZzYZpMjrGjWKuz8BBkJHVRauoC77QlF3nOrhG3ljjw"/>
+<!-- Gradient Scrim for text readability if needed -->
+<div class="absolute inset-0 bg-gradient-to-t from-surface/60 to-transparent"></div>
+</div>
+<!-- Main Details Content -->
+<div class="px-margin-mobile pt-lg pb-32 md:px-margin-desktop md:max-w-3xl md:mx-auto">
+<!-- Header Section -->
+<div class="mb-lg">
+<div class="flex items-start justify-between mb-sm">
+<div>
+<!-- Mystery Box Tag (if applicable, styled as requested) -->
+<div class="inline-flex items-center gap-1 bg-[#ffb703] text-[#023047] px-2 py-1 rounded-sm font-label-caps text-label-caps mb-sm shadow-sm">
+<span class="material-symbols-outlined text-[14px]">inventory_2</span>
+                            Surplus Pastry Set
+                        </div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface">Surplus Pastry Set</h1>
+</div>
+</div>
+<!-- Merchant Info -->
+<div class="flex items-center gap-3 bg-surface-container-low p-md rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] mb-lg">
+<div class="w-12 h-12 rounded-full bg-surface-variant flex-shrink-0 overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="A cozy, inviting storefront logo or exterior shot of a modern urban cafe named Kopi Kenangan, featuring warm wood textures, soft ambient lighting, and subtle green plant accents. The aesthetic is tactile and grounded, conveying a sense of community and warmth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpCAK4pTEc0_M44q_aJ_Y7v1Ujdnu7-Kp2QkJYp273JQArHPoKr5WiZTK7z9egDeeQXuR_RyMUycL5NaJbG1JW4ZOB0pU_CRzZ1P9UCtnDa_VL1Q7SwCDxuEASIkP7tkQvEFMUQLWC8s1ql2dJjIMghzswIP8epRqQ6KT0f88KuBMTuA3CVHmhrt3PTDFBol26is1IdXNvBX2cV48rxjpOxOLvIPPP1XCJhoco0kwFVBLotmadTpbYNQ"/>
+</div>
+<div class="flex-1">
+<h2 class="font-title-md text-title-md text-on-surface">Kopi Kenangan - Margonda</h2>
+<div class="flex items-center gap-1 text-on-surface-variant font-body-sm text-body-sm mt-xs">
+<span class="material-symbols-outlined text-[16px] text-[#ffb703]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-bold">4.8</span>
+<span>(120+ ratings)</span>
+<span class="mx-1">•</span>
+<span>1.2 km away</span>
+</div>
+</div>
+<button class="text-primary font-label-caps text-label-caps">VIEW</button>
+</div>
+<!-- Listing Description -->
+<div class="mb-xl">
+<h3 class="font-title-md text-title-md text-on-surface mb-sm">What you might get</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant">
+                        A delicious selection of today's surplus pastries including croissants and danishes. Perfectly fresh, just unsold. The exact contents are a surprise, helping us rescue whatever is left at the end of the day!
+                    </p>
+</div>
+<!-- Bento Grid for Details -->
+<div class="grid grid-cols-2 gap-4 mb-xl">
+<!-- Pickup Window -->
+<div class="col-span-2 md:col-span-1 bg-surface-container p-md rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] flex flex-col justify-center">
+<div class="flex items-center gap-2 text-primary mb-2">
+<span class="material-symbols-outlined">schedule</span>
+<span class="font-label-caps text-label-caps">PICKUP WINDOW</span>
+</div>
+<p class="font-title-md text-title-md text-on-surface">Today, 18:00 - 20:00</p>
+</div>
+<!-- Allergen Info -->
+<div class="col-span-2 md:col-span-1 bg-surface-container p-md rounded-xl shadow-[0px_4px_20px_rgba(0,0,0,0.04)] flex flex-col justify-center">
+<div class="flex items-center gap-2 text-on-surface-variant mb-2">
+<span class="material-symbols-outlined">info</span>
+<span class="font-label-caps text-label-caps">ALLERGENS</span>
+</div>
+<div class="flex flex-wrap gap-2">
+<span class="bg-surface-variant text-on-surface-variant px-2 py-1 rounded-sm font-body-sm text-body-sm">Wheat</span>
+<span class="bg-surface-variant text-on-surface-variant px-2 py-1 rounded-sm font-body-sm text-body-sm">Dairy</span>
+<span class="bg-surface-variant text-on-surface-variant px-2 py-1 rounded-sm font-body-sm text-body-sm">Eggs</span>
+</div>
+</div>
+</div>
+<!-- Policy Warning -->
+<div class="bg-error-container/30 border border-error-container p-md rounded-xl flex gap-3 items-start mb-xl">
+<span class="material-symbols-outlined text-error mt-1">warning</span>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface mb-xs">No-Show Policy</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                            If you fail to pick up your rescued food within the designated window without cancelling, you may be restricted from future reservations. Let's make sure good food doesn't go to waste!
+                        </p>
+</div>
+</div>
+<!-- Map / Location Area (Optional enhancement based on instructions) -->
+<div class="mb-xl rounded-xl overflow-hidden shadow-[0px_4px_20px_rgba(0,0,0,0.04)] h-[200px] relative bg-surface-variant">
+<img class="w-full h-full object-cover opacity-80" data-alt="A stylized, modern, light-themed map snippet showing a simplified urban grid focusing on the Margonda area. The map uses a soft pastel color palette with warm sandstone and subtle green accents to match the Urban Pantry brand aesthetic, indicating a tactile, community-focused navigation experience rather than a stark technical map." data-location="Margonda" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmcghj61WLPsr5xOO-Quuzli2trfvMQfa6t0Fob44o5OPEEc83TfRJZ2jVG4MEx_cfH27FvI2Bzlem3RAASIvwEHT167GU_ZTlKGRXlI0SPfiEmGecZDVOhYHw76Zq6wL03ku4ltftwzexfe356OnsvwUSGaJLEx_iQquQDyPm1rMJ3hEgBZ5lcfM0M4Bw_j5NvALfJSZg9On8Z8liB4HZTOHT-IGe3Mv72ZsRoQq4LEX72IOAqSoJ_A"/>
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+<div class="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center animate-pulse">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Sticky Bottom Bar (Transactional - Replaces BottomNavBar) -->
+<div class="fixed bottom-0 left-0 w-full z-50 bg-surface shadow-[0px_-4px_20px_rgba(0,0,0,0.08)] rounded-t-xl px-margin-mobile py-md pb-safe md:px-margin-desktop md:max-w-[1200px] md:left-1/2 md:-translate-x-1/2 border-t-4 border-primary">
+<div class="flex items-center justify-between gap-4 max-w-3xl mx-auto">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant line-through mb-xs">Rp40.000</span>
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Rp12.000</span>
+</div>
+<button class="bg-[#10b981] text-white h-[48px] px-8 rounded-[12px] font-title-md text-title-md flex items-center justify-center gap-2 flex-1 max-w-[250px] shadow-sm active:translate-y-px transition-all duration-150">
+<span class="material-symbols-outlined">shopping_bag</span>
+                Rescue Now
+            </button>
+</div>
+</div>
+</body></html>

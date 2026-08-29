@@ -1,0 +1,186 @@
+@import "tailwindcss";
+
+/* ============================================================
+   FOODRESCUE — Fresh Harvest & Warm Table Design System
+   Palette: Botanical Leaf Green (Primary) + Tangerine Orange (Rescue Accent) + Golden Toast (Warmth) + Rice Paper Canvas
+   Principles: High-contrast, tactile micro-interactions, clean layout rhythm, zero slop.
+   ============================================================ */
+
+:root {
+  /* --- Primitive Color Tokens (OKLCH) --- */
+  --leaf-50: oklch(0.975 0.02 142);
+  --leaf-100: oklch(0.94 0.04 142);
+  --leaf-500: oklch(0.58 0.14 142);
+  --leaf-600: oklch(0.46 0.14 142); /* #2D6A4F Botanical Green */
+  --leaf-700: oklch(0.38 0.12 142);
+  --leaf-900: oklch(0.24 0.08 142);
+
+  --tangerine-50: oklch(0.975 0.03 44);
+  --tangerine-100: oklch(0.94 0.06 44);
+  --tangerine-500: oklch(0.68 0.20 44);
+  --tangerine-600: oklch(0.60 0.21 44); /* #E85D04 Rescue Orange */
+  --tangerine-700: oklch(0.52 0.20 44);
+
+  --toast-50: oklch(0.98 0.03 78);
+  --toast-100: oklch(0.94 0.07 78);
+  --toast-500: oklch(0.78 0.17 78); /* #F59E0B Golden Amber */
+  --toast-600: oklch(0.68 0.17 78);
+
+  --sprout-50: oklch(0.98 0.03 135);
+  --sprout-500: oklch(0.72 0.18 135); /* #65A30D Fresh Lime */
+
+  --canvas-50: oklch(0.985 0.006 90); /* #FBF9F5 Warm Cream */
+  --canvas-100: oklch(0.96 0.008 90);
+  --canvas-200: oklch(0.92 0.01 90);
+  --canvas-300: oklch(0.85 0.012 90);
+  --canvas-400: oklch(0.70 0.012 90);
+  --canvas-500: oklch(0.52 0.014 90);
+  --canvas-600: oklch(0.40 0.012 90);
+  --canvas-700: oklch(0.30 0.01 90);
+  --canvas-800: oklch(0.22 0.008 90);
+  --canvas-900: oklch(0.18 0.01 60);  /* #1C1917 Deep Espresso */
+  --canvas-950: oklch(0.12 0.008 60);
+
+  /* --- Semantic Design System Tokens --- */
+  --background: var(--canvas-50);
+  --foreground: var(--canvas-900);
+
+  --card: #ffffff;
+  --card-foreground: var(--canvas-900);
+
+  --popover: #ffffff;
+  --popover-foreground: var(--canvas-900);
+
+  --primary: var(--leaf-600);
+  --primary-foreground: #ffffff;
+
+  --secondary: var(--canvas-100);
+  --secondary-foreground: var(--canvas-800);
+
+  --accent: var(--leaf-50);
+  --accent-foreground: var(--leaf-900);
+
+  --muted: var(--canvas-100);
+  --muted-foreground: var(--canvas-500);
+
+  --destructive: var(--tangerine-600);
+  --destructive-foreground: #ffffff;
+
+  --warning: var(--toast-500);
+  --warning-foreground: oklch(0.25 0.08 78);
+
+  --success: var(--leaf-600);
+  --success-foreground: #ffffff;
+
+  --border: var(--canvas-200);
+  --input: var(--canvas-200);
+  --ring: var(--leaf-600);
+
+  --radius: 0.875rem;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: var(--canvas-900);
+  --sidebar-accent: var(--leaf-50);
+  --sidebar-accent-foreground: var(--leaf-900);
+  --sidebar-border: var(--canvas-200);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* --- Base Typography & Reset --- */
+* {
+  border-color: var(--border);
+  letter-spacing: -0.015em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.025em;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Selection --- */
+::selection {
+  background: var(--leaf-100);
+  color: var(--leaf-900);
+}
+
+/* --- Tactile Scrollbar --- */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--canvas-300);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--canvas-400);
+}
+
+/* --- Scanner Beam Animation --- */
+@keyframes scan-beam {
+  0% {
+    top: 5%;
+    opacity: 0.2;
+  }
+  50% {
+    top: 90%;
+    opacity: 0.9;
+  }
+  100% {
+    top: 5%;
+    opacity: 0.2;
+  }
+}
+
+.animate-scan-beam {
+  animation: scan-beam 2.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}

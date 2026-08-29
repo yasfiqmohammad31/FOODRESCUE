@@ -1,0 +1,22 @@
+# ==============================================================================
+# FOODRESCUE API — Cloudflare Workers Environment Variables Template
+# ==============================================================================
+# Copy this file to `apps/api/.dev.vars` for local Miniflare simulation,
+# or set these secrets via Cloudflare Dashboard / `wrangler secret put <KEY>`.
+
+# Application Environment ('development' | 'staging' | 'production')
+ENVIRONMENT=development
+
+# JWT Security Secrets (HMAC-SHA256)
+JWT_ACCESS_SECRET=foodrescue_production_jwt_secret_change_me_before_deploying
+
+# Payment Gateway (Xendit Sandbox / Production)
+XENDIT_SECRET_KEY=xnd_development_dummy_key_123456
+XENDIT_CALLBACK_TOKEN=xnd_webhook_verification_token
+
+# Google Cloud OAuth Client ID (for 1-Tap Google Sign-In)
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+
+# PWA Base Frontend URLs for deep linking & CORS
+CONSUMER_URL=http://localhost:3000
+MERCHANT_URL=http://localhost:3001

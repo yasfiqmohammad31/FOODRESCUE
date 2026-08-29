@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Instant Undo</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary-fixed": "#3e001d",
+                      "on-background": "#1d1b1b",
+                      "tertiary": "#8d0048",
+                      "on-tertiary-fixed-variant": "#8e0049",
+                      "error": "#ba1a1a",
+                      "on-secondary-fixed-variant": "#851b49",
+                      "tertiary-fixed-dim": "#ffb1c7",
+                      "surface-bright": "#fff8f7",
+                      "secondary-fixed-dim": "#ffb1c7",
+                      "outline-variant": "#dbc0c6",
+                      "on-primary-fixed-variant": "#851b49",
+                      "secondary-container": "#fd7ba8",
+                      "inverse-on-surface": "#f6efef",
+                      "on-primary-container": "#ffc9d7",
+                      "primary-fixed-dim": "#ffb1c7",
+                      "on-surface": "#1d1b1b",
+                      "on-error-container": "#93000a",
+                      "on-primary-fixed": "#3e001d",
+                      "surface-container-high": "#ede7e6",
+                      "surface-variant": "#e7e1e0",
+                      "on-error": "#ffffff",
+                      "surface-tint": "#a43561",
+                      "error-container": "#ffdad6",
+                      "tertiary-container": "#b11d60",
+                      "primary-container": "#a33460",
+                      "surface-container": "#f3ecec",
+                      "inverse-primary": "#ffb1c7",
+                      "on-tertiary-container": "#ffc9d7",
+                      "secondary-fixed": "#ffd9e2",
+                      "on-surface-variant": "#554247",
+                      "tertiary-fixed": "#ffd9e2",
+                      "on-tertiary-fixed": "#3e001d",
+                      "on-secondary-container": "#760c3d",
+                      "surface": "#fff8f7",
+                      "inverse-surface": "#323030",
+                      "surface-dim": "#dfd9d8",
+                      "secondary": "#a43560",
+                      "background": "#fff8f7",
+                      "primary-fixed": "#ffd9e2",
+                      "on-tertiary": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "on-secondary": "#ffffff",
+                      "primary": "#841a48",
+                      "outline": "#887177",
+                      "surface-container-low": "#f9f2f1",
+                      "surface-container-highest": "#e7e1e0",
+                      "surface-container-lowest": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xs": "4px",
+                      "xl": "32px",
+                      "margin-mobile": "16px",
+                      "gutter": "16px",
+                      "margin-desktop": "48px",
+                      "base": "4px",
+                      "sm": "8px",
+                      "md": "16px",
+                      "lg": "24px"
+              },
+              "fontFamily": {
+                      "display": [
+                              "Geist"
+                      ],
+                      "headline-lg-mobile": [
+                              "Geist"
+                      ],
+                      "headline-lg": [
+                              "Geist"
+                      ],
+                      "body-sm": [
+                              "Geist"
+                      ],
+                      "title-md": [
+                              "Geist"
+                      ],
+                      "body-lg": [
+                              "Geist"
+                      ],
+                      "label-caps": [
+                              "Geist"
+                      ]
+              },
+              "fontSize": {
+                      "display": [
+                              "40px",
+                              {
+                                      "lineHeight": "1.1",
+                                      "letterSpacing": "-0.04em",
+                                      "fontWeight": "900"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.5",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "title-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "1",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .progress-ring__circle {
+            transition: stroke-dashoffset 1s linear;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col antialiased">
+<!-- Top Navigation Placeholder (suppressed for transactional flow) -->
+<!-- Main Content Area -->
+<main class="flex-grow flex flex-col justify-center items-center px-margin-mobile w-full max-w-md mx-auto h-screen">
+<!-- Animated Confetti/Success bg -->
+<div class="absolute inset-0 z-[-1] opacity-20 pointer-events-none overflow-hidden flex justify-center items-center">
+<div class="bg-cover bg-center w-[200%] h-[200%] blur-3xl opacity-50" data-alt="A soft, blurred, abstract background image with a sunlit amber hue, suggesting warmth, hope, and an organic, modern feeling. The focus is completely soft, creating a gentle gradient of warm colors that fade into the light background. It evokes a sense of relief and a comforting sanctuary, typical of a modern, purposeful design aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAAVWCyHmNcuabKhmYgnNlIoN9fCYZAddrzlXFymemtmbd5aaC-jgiwTfbFkBtarEGw-lGYD-wlFj-oMlgs6vLXQnQqqJCqU6BogmNESxhUCuCz5f8kEChvjbd_WO1lc1LUCOppctBEX2pr0y-jbG9r9_gfRZ95eSU9NLxu-HTDeFVFFb6w6tkj_lmA5ULX8LQXtV9S8yqtN8-bbiUS5l1SUE1zFzD_wcercQ8X1usaAdyywDZlFA3NtQ')"></div>
+</div>
+<div class="text-center mb-12">
+<h1 class="font-display text-display text-primary mb-xs">Order Secured!</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Preparing your Rescue Voucher...</p>
+</div>
+<!-- Radial Countdown -->
+<div class="relative w-64 h-64 mb-12 flex items-center justify-center">
+<svg class="w-full h-full absolute top-0 left-0" viewbox="0 0 120 120">
+<circle class="text-surface-variant stroke-current" cx="60" cy="60" fill="transparent" r="54" stroke-width="8"></circle>
+<circle class="text-error stroke-current progress-ring__circle" cx="60" cy="60" fill="transparent" id="progress-circle" r="54" stroke-dasharray="339.292" stroke-dashoffset="0" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<div class="z-10 flex flex-col items-center">
+<span class="font-display text-display text-on-background" id="countdown-text">60s</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant mt-1 uppercase tracking-wider">Remaining</span>
+</div>
+</div>
+<!-- Actions -->
+<div class="w-full flex flex-col gap-md">
+<button class="w-full h-12 bg-error text-on-error rounded-xl font-title-md text-title-md flex items-center justify-center hover:opacity-90 active:translate-y-px transition-all duration-150 shadow-sm">
+                Cancel Order (Instant Refund)
+            </button>
+<div class="text-center px-4">
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-xs">
+                    After 60 seconds, your order will be sent to the merchant and cannot be cancelled.
+                </p>
+<div class="flex items-center justify-center gap-2 mt-4 text-primary bg-primary-container/20 py-2 px-4 rounded-full inline-flex">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">info</span>
+<p class="font-label-caps text-label-caps">Cancelling returns 100% to your Rescue Credit.</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Placeholder (suppressed for transactional flow) -->
+<script>
+        // Simple countdown logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const circle = document.getElementById('progress-circle');
+            const radius = circle.r.baseVal.value;
+            const circumference = radius * 2 * Math.PI;
+            
+            circle.style.strokeDasharray = `${circumference} ${circumference}`;
+            circle.style.strokeDashoffset = 0;
+
+            const countdownText = document.getElementById('countdown-text');
+            let timeLeft = 60;
+            const totalTime = 60;
+
+            const setProgress = (percent) => {
+                const offset = circumference - percent / 100 * circumference;
+                circle.style.strokeDashoffset = offset;
+            }
+
+            const interval = setInterval(() => {
+                timeLeft--;
+                countdownText.textContent = `${timeLeft}s`;
+                
+                const percentage = (timeLeft / totalTime) * 100;
+                setProgress(percentage);
+
+                // Change color as it gets closer
+                if(timeLeft < 15) {
+                    circle.classList.remove('text-error');
+                    circle.classList.add('text-[#8d0048]'); // Tertiary color for urgency
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    countdownText.textContent = "0s";
+                    // Transition to next screen logic would go here
+                }
+            }, 1000);
+        });
+    </script>
+</body></html>

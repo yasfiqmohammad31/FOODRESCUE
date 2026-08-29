@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-29T16:00:00.000Z",
+  "title": "Design System: FOODRESCUE",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Forest Emerald",
+        "canonical": "oklch(0.50 0.15 155)",
+        "tonalRamp": [
+          "oklch(0.18 0.05 155)",
+          "oklch(0.26 0.08 155)",
+          "oklch(0.42 0.13 155)",
+          "oklch(0.50 0.15 155)",
+          "oklch(0.58 0.16 155)",
+          "oklch(0.75 0.12 155)",
+          "oklch(0.94 0.05 155)",
+          "oklch(0.975 0.025 155)"
+        ]
+      },
+      "accent-amber": {
+        "role": "secondary",
+        "displayName": "Sunlit Amber",
+        "canonical": "oklch(0.64 0.16 55)",
+        "tonalRamp": [
+          "oklch(0.25 0.06 55)",
+          "oklch(0.35 0.09 55)",
+          "oklch(0.50 0.14 55)",
+          "oklch(0.64 0.16 55)",
+          "oklch(0.75 0.16 70)",
+          "oklch(0.85 0.12 75)",
+          "oklch(0.94 0.06 80)",
+          "oklch(0.98 0.03 80)"
+        ]
+      },
+      "neutral-bg": {
+        "role": "neutral",
+        "displayName": "Sandstone Canvas",
+        "canonical": "oklch(0.985 0.004 80)",
+        "tonalRamp": [
+          "oklch(0.11 0.004 80)",
+          "oklch(0.22 0.006 80)",
+          "oklch(0.40 0.010 80)",
+          "oklch(0.52 0.012 80)",
+          "oklch(0.68 0.012 80)",
+          "oklch(0.84 0.010 80)",
+          "oklch(0.91 0.008 80)",
+          "oklch(0.985 0.004 80)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display Heavy", "purpose": "Hero headline dan dial hitung mundur 60s." },
+      "headline": { "displayName": "Page Headline", "purpose": "Judul halaman dan section header." },
+      "title": { "displayName": "Item Title", "purpose": "Nama menu makanan dan gerai merchant." },
+      "body": { "displayName": "Standard Body", "purpose": "Deskripsi makanan, alamat, dan instruksi pickup." },
+      "label": { "displayName": "Badge / Pill Label", "purpose": "Tag alergen, diskon hemat %, dan status pesanan." }
+    },
+    "shadows": [
+      { "name": "card-rest", "value": "0 1px 2px 0 rgb(0 0 0 / 0.04)", "purpose": "Elevasi default kartu saat istirahat." },
+      { "name": "float-hover", "value": "0 4px 12px -2px rgb(0 0 0 / 0.08)", "purpose": "Elevasi saat dihover atau bar navigasi melayang." }
+    ],
+    "motion": [
+      { "name": "ease-out-tactile", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Transisi mikro-interaksi tombol dan kartu." },
+      { "name": "scan-beam", "value": "cubic-bezier(0.65, 0, 0.35, 1)", "purpose": "Animasi garis pemindai QR kamera." }
+    ],
+    "breakpoints": [
+      { "name": "mobile-pwa", "value": "448px" },
+      { "name": "desktop-dashboard", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Tombol aksi utama untuk checkout, pemesanan, dan verifikasi serah terima.",
+      "html": "<button class=\"ds-btn-primary\">Selamatkan Sekarang</button>",
+      "css": ".ds-btn-primary { background: oklch(0.50 0.15 155); color: #ffffff; padding: 10px 20px; font-weight: 700; font-size: 14px; border: none; border-radius: 12px; cursor: pointer; transition: transform 0.15s ease, background 0.15s ease; letter-spacing: -0.015em; } .ds-btn-primary:hover { background: oklch(0.42 0.13 155); } .ds-btn-primary:active { transform: scale(0.98); }"
+    },
+    {
+      "name": "Discount Badge",
+      "kind": "chip",
+      "refersTo": "badge-discount",
+      "description": "Badge penanda persentase diskon hemat porsi surplus.",
+      "html": "<span class=\"ds-badge-discount\">Hemat 65%</span>",
+      "css": ".ds-badge-discount { background: oklch(0.50 0.15 155); color: #ffffff; padding: 4px 8px; font-weight: 800; font-size: 12px; border-radius: 6px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; display: inline-block; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Urban Pantry Sanctuary",
+    "overview": "FOODRESCUE menggabungkan ketenangan ekologis dengan ketepatan operasional dapur modern. Desain ini menolak estetika template startup daur ulang yang serba hijau pucat tanpa kepribadian, dan menggantikannya dengan pengalaman kuliner perkotaan yang hangat, renyah, dan mengundang selera.",
+    "keyCharacteristics": [
+      "Savory & Earth-Grounded: Perpaduan hijau zamrud alami, kehangatan roti panggang, dan alas pasir bersih.",
+      "Tactile & Responsive: Kontrol dengan feedback jelas, border halus 1px tanpa bayangan offset berlebihan.",
+      "Clarity over Clutter: Hirarki tipografi tegas tanpa kickers dekoratif berulang."
+    ],
+    "rules": [
+      {
+        "name": "The Tabular Number Rule",
+        "body": "Semua angka yang merepresentasikan harga Rupiah, sisa detik hitung mundur, porsi makanan, dan koordinat jarak wajib menggunakan kelas tabular-nums.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-at-Rest Rule",
+        "body": "Semua kartu dan permukaan bersifat datar saat diam dengan garis tepi 1px. Bayangan lembut hanya muncul sebagai respons terhadap interaksi.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do selalu gunakan formatRupiah() dan kelas tabular-nums untuk semua penyajian nilai uang.",
+      "Do sediakan informasi waktu pengambilan (pickup window) dan jarak tempuh pada setiap kartu listing.",
+      "Do pastikan tombol pembatalan pada periode 60 detik selalu disertai dialog konfirmasi yang menjelaskan bahwa dana 100% kembali ke Rescue Credit."
+    ],
+    "donts": [
+      "Don't menambahkan eyebrow label atau kicker dekoratif di atas heading yang tidak membawa informasi baru.",
+      "Don't menggunakan animasi bounce yang memantul kaku; gunakan kurva transisi smooth decelerated ease-out.",
+      "Don't menggunakan teks abu-abu pudar di atas latar belakang berwarna yang menurunkan rasio kontras di bawah 4.5:1."
+    ]
+  }
+}

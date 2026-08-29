@@ -1,0 +1,44 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "foodrescue-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-07-18",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "vars": {
+    "ENVIRONMENT": "development",
+    "APP_NAME": "FOODRESCUE API",
+    "JWT_ACCESS_SECRET": "foodrescue_super_jwt_secret_dev_key_2026",
+    "XENDIT_CALLBACK_TOKEN": "xnd_dev_callback_token_secret"
+  },
+
+  // KV Namespaces (Geohash Feed Cache, Session, Rate Limiter)
+  "kv_namespaces": [
+    {
+      "binding": "CACHE_KV",
+      "id": "cef9230dbf58402596041cf47bd81af0",
+      "preview_id": "e63c651edbba418eb42e2962051dee9c"
+    }
+  ],
+
+  // R2 Storage (Surplus Food Photos, Merchant Banners)
+  "r2_buckets": [
+    {
+      "binding": "FOOD_STORAGE_R2",
+      "bucket_name": "foodrescue-photos"
+    }
+  ],
+
+  // Cloudflare Workers AI (LLM on Edge GPU for sentiment & food safety moderation)
+  "ai": {
+    "binding": "AI"
+  },
+
+  // Cron Triggers (Auto-No Show 5 min, AI Dynamic Pricing sweep 15 min)
+  "triggers": {
+    "crons": [
+      "*/5 * * * *",
+      "*/15 * * * *"
+    ]
+  }
+}
