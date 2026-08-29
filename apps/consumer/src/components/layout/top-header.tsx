@@ -28,7 +28,9 @@ export function TopHeader() {
               className="group flex items-center gap-1 text-left text-sm font-black text-foreground transition hover:text-primary mt-0.5"
             >
               <MapPin className="h-4 w-4 shrink-0 text-primary" />
-              <span className="truncate max-w-[200px]">{address}</span>
+              <span className={`truncate max-w-[200px] ${!address ? "text-primary font-bold" : ""}`}>
+                {address || "Pilih Lokasi & Radius"}
+              </span>
               <span className="shrink-0 rounded-full bg-[#F3EFE6] px-2 py-0.5 text-[10px] font-bold text-foreground">
                 {radiusKm} km
               </span>

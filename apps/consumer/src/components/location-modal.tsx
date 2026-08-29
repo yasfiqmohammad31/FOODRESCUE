@@ -28,7 +28,7 @@ export function LocationModal({ isOpen, onClose }: LocationModalProps) {
 
   const [addressInput, setAddressInput] = useState(currentAddress);
   const [selectedRadius, setSelectedRadius] = useState(currentRadius);
-  const [tempCoords, setTempCoords] = useState<{ lat: number; lng: number }>({ lat, lng });
+  const [tempCoords, setTempCoords] = useState<{ lat: number | null; lng: number | null }>({ lat, lng });
   const [statusMessage, setStatusMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
 
   if (!isOpen) return null;
@@ -62,7 +62,11 @@ export function LocationModal({ isOpen, onClose }: LocationModalProps) {
   };
 
   const handleApply = () => {
-    setLocation(addressInput, tempCoords.lat, tempCoords.lng);
+    if (tempCoords.lat !== null && tempCoords.lng !== null) {
+      setLocation(addressInput || "Lokasi Pilihan", tempCoords.lat, tempCoords.lng);
+    } else if (addressInput.trim()) {
+      setLocation(addressInput, -7.2856, 112.6954);
+    }
     setRadius(selectedRadius);
     onClose();
   };

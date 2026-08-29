@@ -56,8 +56,8 @@ export default function FeedPage() {
       setIsLoading(true);
       try {
         const data = await consumerApi.getListings({
-          lat,
-          lng,
+          lat: lat ?? undefined,
+          lng: lng ?? undefined,
           radius: radiusKm,
           category: selectedCategory === "mystery" ? "MYSTERY_BOX" : selectedCategory === "regular" ? "REGULAR" : undefined,
         });

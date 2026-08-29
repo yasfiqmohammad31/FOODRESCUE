@@ -3,20 +3,21 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 export interface GeoLocationState {
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
   address: string;
   radiusKm: number;
   isLocating: boolean;
   accuracy: number | null;
   error: string | null;
+  hasLocation: boolean;
   requestCurrentGPS: () => Promise<boolean>;
   setLocation: (address: string, lat: number, lng: number) => void;
   setRadius: (radius: number) => void;
 }
 
 export const PRESET_HUBS = [
-  { name: "Dekat Kampus ITS, Surabaya", lat: -7.2856, lng: 112.6954 },
+  { name: "Kampus ITS, Surabaya", lat: -7.2856, lng: 112.6954 },
   { name: "Kampus UNAIR B, Gubeng Surabaya", lat: -7.2694, lng: 112.7582 },
   { name: "Kampus UB / Malang Kota", lat: -7.9525, lng: 112.6144 },
   { name: "Kampus ITB / Dago Bandung", lat: -6.8915, lng: 107.6107 },
@@ -24,14 +25,12 @@ export const PRESET_HUBS = [
   { name: "Kuningan / Sudirman Jakarta", lat: -6.2244, lng: 106.8294 },
 ];
 
-const DEFAULT_HUB = PRESET_HUBS[0];
-
 const GeoContext = createContext<GeoLocationState | null>(null);
 
 export function GeoProvider({ children }: { children: React.ReactNode }) {
-  const [lat, setLat] = useState<number>(DEFAULT_HUB.lat);
-  const [lng, setLng] = useState<number>(DEFAULT_HUB.lng);
-  const [address, setAddress] = useState<string>(DEFAULT_HUB.name);
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [address, setAddress] = useState<string>("");
   const [radiusKm, setRadiusKm] = useState<number>(5);
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [accuracy, setAccuracy] = useState<number | null>(null);
@@ -47,7 +46,7 @@ export function GeoProvider({ children }: { children: React.ReactNode }) {
           if (parsed.lat && parsed.lng) {
             setLat(parsed.lat);
             setLng(parsed.lng);
-            setAddress(parsed.address || DEFAULT_HUB.name);
+            setAddress(parsed.address || "");
             setRadiusKm(parsed.radiusKm || 5);
           }
         } catch {
@@ -57,12 +56,16 @@ export function GeoProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const saveToStorage = (newLat: number, newLng: number, newAddr: string, newRad: number) => {
+  const saveToStorage = (newLat: number | null, newLng: number | null, newAddr: string, newRad: number) => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(
-        "fr_geo",
-        JSON.stringify({ lat: newLat, lng: newLng, address: newAddr, radiusKm: newRad })
-      );
+      if (newLat !== null && newLng !== null) {
+        localStorage.setItem(
+          "fr_geo",
+          JSON.stringify({ lat: newLat, lng: newLng, address: newAddr, radiusKm: newRad })
+        );
+      } else {
+        localStorage.removeItem("fr_geo");
+      }
     }
   };
 
@@ -161,6 +164,7 @@ export function GeoProvider({ children }: { children: React.ReactNode }) {
         isLocating,
         accuracy,
         error,
+        hasLocation: lat !== null && lng !== null && address.trim().length > 0,
         requestCurrentGPS,
         setLocation,
         setRadius,

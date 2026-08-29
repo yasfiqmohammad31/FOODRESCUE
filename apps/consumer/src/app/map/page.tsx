@@ -28,14 +28,16 @@ export default function MapPage() {
 
   useEffect(() => {
     let isMounted = true;
-    consumerApi.getListings({ lat, lng, radius: radiusKm }).then((data) => {
-      if (isMounted && data && Array.isArray(data)) {
-        setListings(data);
-        if (data.length > 0) {
-          setSelectedListing(data[0]);
+    consumerApi
+      .getListings({ lat: lat ?? undefined, lng: lng ?? undefined, radius: radiusKm })
+      .then((data) => {
+        if (isMounted && data && Array.isArray(data)) {
+          setListings(data);
+          if (data.length > 0) {
+            setSelectedListing(data[0]);
+          }
         }
-      }
-    });
+      });
     return () => {
       isMounted = false;
     };
@@ -60,7 +62,7 @@ export default function MapPage() {
         <div className="flex items-center gap-2 rounded-2xl bg-card/95 backdrop-blur-md px-3.5 py-2.5 shadow-lg border border-border flex-1">
           <MapPin className="h-4 w-4 text-primary shrink-0" />
           <span className="truncate text-xs font-bold text-foreground">
-            Radius {radiusKm} km: {address}
+            Radius {radiusKm} km: {address || "Pilih Lokasi & Radius"}
           </span>
         </div>
 
