@@ -65,6 +65,8 @@ aiRouter.post("/sentiment-analysis", zValidator("json", reviewSchema), async (c)
     message: sentiment === "CRITICAL_FOOD_SAFETY"
       ? "Ulasan Anda telah diterima dan diteruskan ke tim Pengawasan Mutu & Keamanan Pangan."
       : "Terima kasih atas ulasan Anda!",
+    sentiment,
+    criticalFlag: sentiment === "CRITICAL_FOOD_SAFETY",
     review: newReview,
   });
 });

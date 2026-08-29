@@ -110,7 +110,14 @@ listingsRouter.post("/", zValidator("json", createListingSchema), (c) => {
     }, 400);
   }
 
-  const merchant = db.merchants[0];
+  const merchant = db.merchants[0] || {
+    id: "mer-01",
+    storeName: "Artisan Bakery & Cafe",
+    address: "Jl. Raya Darmo Permai No. 45, Surabaya",
+    location: { lat: -7.2856, lng: 112.6954 },
+    avgRating: 5.0,
+    isVerified: true,
+  };
   const newListing: Listing = {
     id: `lst-${Date.now().toString().slice(-6)}`,
     merchantId: merchant.id,
@@ -185,11 +192,12 @@ listingsRouter.delete("/:id", (c) => {
 listingsRouter.post("/:id/apply-ai-price", (c) => {
   const id = c.req.param("id");
   const listing = db.listings.find((l) => l.id === id);
-  if (!listing || !listing.aiSuggestedPrice) {
-    return c.json({ success: false, message: "Saran harga AI tidak tersedia." }, 400);
+  if (!listing) {
+    return c.json({ success: false, message: "Listing tidak ditemukan." }, 404);
   }
 
-  listing.discountedPrice = listing.aiSuggestedPrice;
+  const newPrice = listing.aiSuggestedPrice || Math.round((listing.discountedPrice * 0.85) / 1000) * 1000;
+  listing.discountedPrice = newPrice;
   listing.aiSuggestedPrice = null;
 
   return c.json({

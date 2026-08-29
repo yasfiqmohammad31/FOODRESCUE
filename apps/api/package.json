@@ -10,7 +10,8 @@
     "build": "tsc --noEmit",
     "type-check": "tsc --noEmit",
     "lint": "echo 'No lint errors in api'",
-    "test": "tsx test/api.test.ts"
+    "test": "tsx test/api.test.ts",
+    "test:e2e": "tsx test/e2e.test.ts"
   },
   "dependencies": {
     "@hono/zod-openapi": "^0.18.4",

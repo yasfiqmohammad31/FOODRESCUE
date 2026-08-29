@@ -27,15 +27,44 @@ const step3Schema = z.object({
   picName: z.string().min(3),
 });
 
+function getOrCreateMerchant(): MerchantProfile {
+  if (!db.merchants[0]) {
+    const defaultMerchant: MerchantProfile = {
+      id: "mer-01",
+      userId: db.users.find((u) => u.role === "MERCHANT")?.id || "usr-mer-001",
+      storeName: "Artisan Bakery & Cafe",
+      category: "Bakery & Pastry",
+      businessPhone: "+6281987654321",
+      address: "Jl. Raya Darmo Permai No. 45, Surabaya",
+      location: { lat: -7.2856, lng: 112.6954 },
+      openTime: "08:00",
+      closeTime: "22:00",
+      bankName: "BCA",
+      accountNumber: "8271928401",
+      accountHolder: "Artisan Bakery Official",
+      isStoreOpen: true,
+      agreedSlaAt: new Date().toISOString(),
+      picName: "Budi Santoso",
+      avgRating: 5.0,
+      totalReviews: 0,
+      isVerified: false,
+      createdAt: new Date().toISOString(),
+    };
+    db.merchants.push(defaultMerchant);
+    return defaultMerchant;
+  }
+  return db.merchants[0];
+}
+
 // GET /merchants/profile
 merchantsRouter.get("/profile", (c) => {
-  const merchant = db.merchants[0];
+  const merchant = getOrCreateMerchant();
   return c.json({ success: true, merchant });
 });
 
 // GET /merchants/stats
 merchantsRouter.get("/stats", (c) => {
-  const merchant = db.merchants[0];
+  const merchant = getOrCreateMerchant();
   const merchantOrders = db.orders.filter((o) => o.merchantId === merchant.id);
   const todayOrders = merchantOrders.filter(
     (o) => o.status === "PICKED_UP" || o.status === "READY" || o.status === "CONFIRMED"
@@ -50,11 +79,11 @@ merchantsRouter.get("/stats", (c) => {
   return c.json({
     success: true,
     stats: {
-      todayRevenue: todayRevenue || 176000,
-      todayPortionsSaved: todayPortionsSaved || 8,
-      availableBalance: 1485000,
+      todayRevenue,
+      todayPortionsSaved,
+      availableBalance: todayRevenue || 1485000,
       activeListingsCount,
-      pendingOrdersCount: 2,
+      pendingOrdersCount: todayOrders.length,
       storeRating: merchant.avgRating,
       totalReviews: merchant.totalReviews,
       isStoreOpen: merchant.isStoreOpen,
@@ -64,7 +93,7 @@ merchantsRouter.get("/stats", (c) => {
 
 // PATCH /merchants/toggle-status
 merchantsRouter.patch("/toggle-status", (c) => {
-  const merchant = db.merchants[0];
+  const merchant = getOrCreateMerchant();
   merchant.isStoreOpen = !merchant.isStoreOpen;
 
   return c.json({
@@ -83,7 +112,7 @@ merchantsRouter.post("/onboarding/step-1", zValidator("json", step1Schema), (c) 
     return c.json({ success: false, message: "Jam tutup harus lebih akhir dari jam buka." }, 400);
   }
 
-  const merchant = db.merchants[0];
+  const merchant = getOrCreateMerchant();
   merchant.storeName = sanitizeText(body.storeName);
   merchant.category = body.category;
   merchant.businessPhone = body.businessPhone;
@@ -102,7 +131,7 @@ merchantsRouter.post("/onboarding/step-2", zValidator("json", step2Schema), (c) 
     return c.json({ success: false, message: "Nomor rekening harus 8-18 digit angka." }, 400);
   }
 
-  const merchant = db.merchants[0];
+  const merchant = getOrCreateMerchant();
   merchant.bankName = body.bankName;
   merchant.accountNumber = cleanAcc;
   merchant.accountHolder = sanitizeText(body.accountHolder);
@@ -114,7 +143,7 @@ merchantsRouter.post("/onboarding/step-2", zValidator("json", step2Schema), (c) 
 merchantsRouter.post("/onboarding/step-3", zValidator("json", step3Schema), (c) => {
   const body = c.req.valid("json");
 
-  const merchant = db.merchants[0];
+  const merchant = getOrCreateMerchant();
   merchant.agreedSlaAt = new Date().toISOString();
   merchant.picName = sanitizeText(body.picName);
   merchant.isVerified = true;

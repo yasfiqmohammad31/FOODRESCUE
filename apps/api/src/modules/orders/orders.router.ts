@@ -206,6 +206,7 @@ ordersRouter.post("/:id/undo", (c) => {
   return c.json({
     success: true,
     message: "Pesanan berhasil dibatalkan. Dana 100% telah dikembalikan ke saldo Rescue Credit Anda.",
+    refundAmount: order.totalPrice,
     newBalance: userWallet.balance,
     order,
   });
