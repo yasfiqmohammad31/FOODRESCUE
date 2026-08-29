@@ -2,23 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Bell, ChevronDown, MapPin, Sparkles, Wallet } from "lucide-react";
+import { Bell, ChevronDown, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatRupiah } from "@/lib/utils";
 import { LocationModal } from "@/components/location-modal";
+import { useGeoLocation } from "@/contexts/geo-context";
 
-interface TopHeaderProps {
-  currentAddress?: string;
-  radiusKm?: number;
-}
-
-export function TopHeader({
-  currentAddress = "Dekat Kampus ITS, Sukolilo",
-  radiusKm = 5,
-}: TopHeaderProps) {
+export function TopHeader() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-  const [selectedRadius, setSelectedRadius] = useState(radiusKm);
-  const [address, setAddress] = useState(currentAddress);
+  const { address, radiusKm, isLocating } = useGeoLocation();
 
   return (
     <>
@@ -27,7 +18,7 @@ export function TopHeader({
           {/* Logo & Geo Location Selector */}
           <div className="flex flex-1 flex-col">
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-              <span className="flex h-2 w-2 rounded-full bg-[#65A30D] animate-pulse" />
+              <span className={`flex h-2 w-2 rounded-full ${isLocating ? "bg-amber-500 animate-ping" : "bg-[#65A30D] animate-pulse"}`} />
               <span>Lokasi Penyelamatan</span>
             </div>
 
@@ -39,7 +30,7 @@ export function TopHeader({
               <MapPin className="h-4 w-4 shrink-0 text-primary" />
               <span className="truncate max-w-[200px]">{address}</span>
               <span className="shrink-0 rounded-full bg-[#F3EFE6] px-2 py-0.5 text-[10px] font-bold text-foreground">
-                {selectedRadius} km
+                {radiusKm} km
               </span>
               <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-primary transition-transform" />
             </button>
@@ -65,13 +56,6 @@ export function TopHeader({
       <LocationModal
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
-        currentAddress={address}
-        currentRadius={selectedRadius}
-        onSave={(newAddress, newRadius) => {
-          setAddress(newAddress);
-          setSelectedRadius(newRadius);
-          setIsLocationModalOpen(false);
-        }}
       />
     </>
   );

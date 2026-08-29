@@ -37,7 +37,10 @@ const CATEGORIES = [
   { id: "regular", label: "Makanan Siap Santap", category: "REGULAR" as ListingCategory, icon: UtensilsCrossed },
 ];
 
+import { useGeoLocation } from "@/contexts/geo-context";
+
 export default function FeedPage() {
+  const { lat, lng, radiusKm } = useGeoLocation();
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [creditBalance, setCreditBalance] = useState<number>(0);
@@ -46,16 +49,16 @@ export default function FeedPage() {
   const [sortBy, setSortBy] = useState<SortOption>("distance");
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
 
-  // Fetch real-time listings from API
+  // Fetch real-time listings from API based on live GPS / chosen hub
   useEffect(() => {
     let isMounted = true;
     const fetchFeed = async () => {
       setIsLoading(true);
       try {
         const data = await consumerApi.getListings({
-          lat: -7.2856,
-          lng: 112.6954,
-          radius: 10,
+          lat,
+          lng,
+          radius: radiusKm,
           category: selectedCategory === "mystery" ? "MYSTERY_BOX" : selectedCategory === "regular" ? "REGULAR" : undefined,
         });
         if (isMounted && data && Array.isArray(data)) {
@@ -71,7 +74,7 @@ export default function FeedPage() {
     return () => {
       isMounted = false;
     };
-  }, [selectedCategory]);
+  }, [selectedCategory, lat, lng, radiusKm]);
 
   // Filtering logic
   const filteredListings = listings.filter((item) => {

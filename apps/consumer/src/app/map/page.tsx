@@ -17,54 +17,37 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatDistance, formatRupiah } from "@/lib/utils";
 import { consumerApi } from "@/lib/api-client";
+import { useGeoLocation } from "@/contexts/geo-context";
 import type { Listing } from "@/types";
 
-const FALLBACK_PIN: Listing = {
-  id: "lst-001",
-  merchantId: "mer-01",
-  title: "Mystery Box Pastry & Viennoiserie",
-  description: "Paket misteri aneka croissant segar.",
-  category: "MYSTERY_BOX",
-  originalPrice: 55000,
-  discountedPrice: 22000,
-  quantityTotal: 6,
-  quantityRemaining: 4,
-  pickupStart: "19:00",
-  pickupEnd: "21:30",
-  status: "ACTIVE",
-  allergens: [],
-  photoUrl: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800",
-  merchant: {
-    storeName: "Artisan Bakery & Cafe",
-    address: "Jl. Raya Darmo Permai No. 45, Surabaya",
-    location: { lat: -7.2856, lng: 112.6954 },
-    avgRating: 4.9,
-    isVerified: true,
-  },
-  aiSuggestedPrice: null,
-  createdAt: "2026-08-29T10:00:00Z",
-};
-
 export default function MapPage() {
-  const [listings, setListings] = useState<Listing[]>([FALLBACK_PIN]);
-  const [selectedListing, setSelectedListing] = useState<Listing>(FALLBACK_PIN);
+  const { lat, lng, radiusKm, address, isLocating, requestCurrentGPS } = useGeoLocation();
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
-    consumerApi.getListings({ lat: -7.2856, lng: 112.6954, radius: 10 }).then((data) => {
-      if (isMounted && data && Array.isArray(data) && data.length > 0) {
+    consumerApi.getListings({ lat, lng, radius: radiusKm }).then((data) => {
+      if (isMounted && data && Array.isArray(data)) {
         setListings(data);
-        setSelectedListing(data[0]);
+        if (data.length > 0) {
+          setSelectedListing(data[0]);
+        }
       }
     });
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [lat, lng, radiusKm]);
 
-  const handleRefreshGPS = () => {
-    setToastMessage("Koordinat GPS terkini diperbarui!");
+  const handleRefreshGPS = async () => {
+    const ok = await requestCurrentGPS();
+    if (ok) {
+      setToastMessage("Koordinat GPS berhasil diperbarui!");
+    } else {
+      setToastMessage("Gagal memperbarui GPS. Pastikan izin lokasi aktif.");
+    }
     setTimeout(() => {
       setToastMessage(null);
     }, 2500);
@@ -77,18 +60,19 @@ export default function MapPage() {
         <div className="flex items-center gap-2 rounded-2xl bg-card/95 backdrop-blur-md px-3.5 py-2.5 shadow-lg border border-border flex-1">
           <MapPin className="h-4 w-4 text-primary shrink-0" />
           <span className="truncate text-xs font-bold text-foreground">
-            Radius 5 km: Sukolilo, Surabaya
+            Radius {radiusKm} km: {address}
           </span>
         </div>
 
-        <button
-          type="button"
+        <Button
+          size="icon"
           onClick={handleRefreshGPS}
-          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-card border border-border shadow-lg text-primary hover:bg-muted transition shrink-0"
-          aria-label="Perbarui posisi GPS saya"
+          disabled={isLocating}
+          className="h-10 w-10 shrink-0 rounded-2xl bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
+          aria-label="Refresh Lokasi GPS"
         >
-          <Navigation className="h-4 w-4 fill-primary" />
-        </button>
+          <Navigation className={`h-4 w-4 ${isLocating ? "animate-spin" : ""}`} />
+        </Button>
       </div>
 
       {/* Floating GPS Feedback Toast */}
@@ -119,7 +103,7 @@ export default function MapPage() {
             { top: "62%", left: "22%" },
           ];
           const pos = positions[index % positions.length];
-          const isSelected = selectedListing.id === listing.id;
+          const isSelected = selectedListing?.id === listing.id;
 
           return (
             <button

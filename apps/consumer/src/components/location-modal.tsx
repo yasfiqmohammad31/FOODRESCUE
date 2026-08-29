@@ -5,69 +5,66 @@ import { AlertCircle, CheckCircle2, LocateFixed, MapPin, Search, X } from "lucid
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { PRESET_HUBS, useGeoLocation } from "@/contexts/geo-context";
 
 interface LocationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentAddress: string;
-  currentRadius: number;
-  onSave: (address: string, radius: number) => void;
 }
 
-const RADIUS_OPTIONS = [1, 3, 5, 10, 15];
+const RADIUS_OPTIONS = [1, 3, 5, 10, 15, 25];
 
-const SUGGESTED_LOCATIONS = [
-  "Dekat Kampus ITS, Sukolilo",
-  "Asrama Mahasiswa ITS & PENS",
-  "Kertajaya Indah & Manyar",
-  "Klampis Ngasem & Semolowaru",
-  "Gubeng & Darmawangsa (Kampus UNAIR B)",
-];
+export function LocationModal({ isOpen, onClose }: LocationModalProps) {
+  const {
+    address: currentAddress,
+    radiusKm: currentRadius,
+    lat,
+    lng,
+    isLocating,
+    requestCurrentGPS,
+    setLocation,
+    setRadius,
+  } = useGeoLocation();
 
-export function LocationModal({
-  isOpen,
-  onClose,
-  currentAddress,
-  currentRadius,
-  onSave,
-}: LocationModalProps) {
-  const [address, setAddress] = useState(currentAddress);
-  const [radius, setRadius] = useState(currentRadius);
-  const [isLocating, setIsLocating] = useState(false);
+  const [addressInput, setAddressInput] = useState(currentAddress);
+  const [selectedRadius, setSelectedRadius] = useState(currentRadius);
+  const [tempCoords, setTempCoords] = useState<{ lat: number; lng: number }>({ lat, lng });
   const [statusMessage, setStatusMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
 
   if (!isOpen) return null;
 
-  const handleUseCurrentGPS = () => {
-    setIsLocating(true);
+  const handleUseCurrentGPS = async () => {
     setStatusMessage(null);
-
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        () => {
-          setIsLocating(false);
-          setAddress("Posisi GPS Anda Saat Ini (Akurasi Tinggi)");
-          setStatusMessage({
-            type: "success",
-            text: "Koordinat GPS berhasil diperoleh.",
-          });
-        },
-        () => {
-          setIsLocating(false);
-          setStatusMessage({
-            type: "error",
-            text: "Izin GPS tidak aktif. Silakan pilih lokasi kampus / jalan di bawah.",
-          });
-        },
-        { timeout: 8000 }
-      );
+    const ok = await requestCurrentGPS();
+    if (ok) {
+      setStatusMessage({
+        type: "success",
+        text: "Koordinat GPS aktif berhasil diperoleh.",
+      });
+      setTimeout(() => {
+        onClose();
+      }, 700);
     } else {
-      setIsLocating(false);
       setStatusMessage({
         type: "error",
-        text: "Browser Anda tidak mendukung geolokasi otomatis.",
+        text: "Izin GPS tidak aktif / tidak tersedia. Silakan pilih hub kampus di bawah.",
       });
     }
+  };
+
+  const handleSelectPreset = (hub: (typeof PRESET_HUBS)[0]) => {
+    setAddressInput(hub.name);
+    setTempCoords({ lat: hub.lat, lng: hub.lng });
+    setStatusMessage({
+      type: "success",
+      text: `Area diubah ke ${hub.name}`,
+    });
+  };
+
+  const handleApply = () => {
+    setLocation(addressInput, tempCoords.lat, tempCoords.lng);
+    setRadius(selectedRadius);
+    onClose();
   };
 
   return (
@@ -83,7 +80,7 @@ export function LocationModal({
           <div className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" />
             <h2 id="location-modal-title" className="text-base font-bold text-foreground">
-              Pilih Radius Penyelamatan
+              Pilih Radius & Lokasi Penyelamatan
             </h2>
           </div>
           <button
@@ -102,11 +99,11 @@ export function LocationModal({
             type="button"
             variant="outline"
             onClick={handleUseCurrentGPS}
-            loading={isLocating}
-            className="w-full justify-center gap-2 border-primary/30 text-primary hover:bg-accent font-semibold"
+            disabled={isLocating}
+            className="w-full justify-center gap-2 border-primary/30 text-primary hover:bg-primary/5 font-bold h-11 rounded-xl"
           >
-            <LocateFixed className="h-4 w-4" />
-            Gunakan Lokasi GPS Saya Saat Ini
+            <LocateFixed className={cn("h-4 w-4", isLocating && "animate-spin text-primary")} />
+            <span>{isLocating ? "Mencari Sinyal GPS..." : "Gunakan Lokasi GPS Saya Saat Ini"}</span>
           </Button>
 
           {/* Inline Status Message Banner */}
@@ -133,15 +130,15 @@ export function LocationModal({
           <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
             Maksimal Jarak Pengambilan (Radius)
           </label>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-6 gap-1.5">
             {RADIUS_OPTIONS.map((r) => (
               <button
                 key={r}
                 type="button"
-                onClick={() => setRadius(r)}
+                onClick={() => setSelectedRadius(r)}
                 className={cn(
                   "flex flex-col items-center justify-center rounded-xl border py-2.5 text-xs font-bold transition-all",
-                  radius === r
+                  selectedRadius === r
                     ? "border-primary bg-primary text-primary-foreground shadow-sm scale-102"
                     : "border-border bg-card text-foreground hover:bg-accent hover:border-primary/40"
                 )}
@@ -160,33 +157,35 @@ export function LocationModal({
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              value={address}
+              value={addressInput}
               onChange={(e) => {
-                setAddress(e.target.value);
+                setAddressInput(e.target.value);
                 setStatusMessage(null);
               }}
               placeholder="Contoh: Jl. Gebang Wetan atau Kampus ITS"
               aria-label="Cari alamat atau nama kampus"
-              className="pl-9"
+              className="pl-9 h-10 rounded-xl"
             />
           </div>
         </div>
 
         {/* Suggested Quick Picks */}
         <div className="mt-3">
-          <p className="text-[11px] text-muted-foreground font-medium mb-1.5">Rekomendasi Area Sekitar:</p>
+          <p className="text-[11px] text-muted-foreground font-medium mb-1.5">Pusat Kampus & Kota Terdekat:</p>
           <div className="flex flex-wrap gap-1.5">
-            {SUGGESTED_LOCATIONS.map((loc) => (
+            {PRESET_HUBS.map((hub) => (
               <button
-                key={loc}
+                key={hub.name}
                 type="button"
-                onClick={() => {
-                  setAddress(loc);
-                  setStatusMessage(null);
-                }}
-                className="rounded-lg border border-border/70 bg-muted/60 px-2.5 py-1 text-[11px] text-foreground hover:border-primary hover:text-primary transition"
+                onClick={() => handleSelectPreset(hub)}
+                className={cn(
+                  "rounded-lg border px-2.5 py-1 text-[11px] transition font-medium",
+                  addressInput === hub.name
+                    ? "border-primary bg-primary/10 text-primary font-bold"
+                    : "border-border/70 bg-muted/60 text-foreground hover:border-primary hover:text-primary"
+                )}
               >
-                {loc}
+                {hub.name}
               </button>
             ))}
           </div>
@@ -194,12 +193,12 @@ export function LocationModal({
 
         {/* Apply CTA */}
         <div className="mt-5 flex gap-2">
-          <Button variant="outline" onClick={onClose} className="flex-1">
+          <Button variant="outline" onClick={onClose} className="flex-1 rounded-xl">
             Batal
           </Button>
           <Button
-            onClick={() => onSave(address, radius)}
-            className="flex-1 bg-primary text-primary-foreground font-semibold"
+            onClick={handleApply}
+            className="flex-1 bg-primary text-primary-foreground font-bold rounded-xl"
           >
             Terapkan Lokasi
           </Button>

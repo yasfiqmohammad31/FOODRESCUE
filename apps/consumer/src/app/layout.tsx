@@ -4,6 +4,7 @@ import "./globals.css";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import { ConsumerAuthGuard } from "@/components/auth-guard";
+import { GeoProvider } from "@/contexts/geo-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,9 +48,11 @@ export default function RootLayout({
         {/* Mobile Device Canvas Frame */}
         <div className="relative flex flex-col min-h-screen w-full max-w-md bg-background shadow-2xl pb-16">
           <ConsumerAuthGuard>
-            <main className="flex-1 flex flex-col">{children}</main>
-            <PWAInstallPrompt />
-            <BottomNav />
+            <GeoProvider>
+              <main className="flex-1 flex flex-col">{children}</main>
+              <PWAInstallPrompt />
+              <BottomNav />
+            </GeoProvider>
           </ConsumerAuthGuard>
         </div>
       </body>
