@@ -38,6 +38,7 @@ const CATEGORIES = [
 ];
 
 import { useGeoLocation } from "@/contexts/geo-context";
+import { PushNotificationBanner } from "@/components/push-notification-banner";
 
 export default function FeedPage() {
   const { lat, lng, radiusKm } = useGeoLocation();
@@ -195,8 +196,11 @@ export default function FeedPage() {
         </div>
       </div>
 
+      {/* Web Push Prompt Banner */}
+      <PushNotificationBanner />
+
       {/* Category Roundels Section */}
-      <div className="mt-3.5 px-4">
+      <div className="mt-2 px-4">
         <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
           Kategori Makanan
         </h2>

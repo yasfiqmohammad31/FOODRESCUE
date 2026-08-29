@@ -11,6 +11,7 @@ import { vouchersRouter } from "./modules/vouchers/vouchers.router";
 import { aiRouter } from "./modules/ai/ai.router";
 import { impactRouter } from "./modules/impact/impact.router";
 import { sendEmail } from "./modules/notifications/email.service";
+import { getSubscription, saveSubscription, sendWebPush, VAPID_KEYS } from "./modules/notifications/push.service";
 import { db } from "./db/mock-db";
 import type { Env } from "./types";
 
@@ -179,6 +180,57 @@ app.post("/api/notifications/test-email", async (c) => {
     return c.json(result);
   } catch (error: any) {
     return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// Web Push VAPID & Subscription Endpoints
+app.get("/api/notifications/vapid-public-key", (c) => {
+  return c.json({
+    success: true,
+    publicKey: VAPID_KEYS.publicKey,
+  });
+});
+
+app.post("/api/notifications/subscribe", async (c) => {
+  try {
+    const body = await c.req.json();
+    const userId = body.userId || "usr-cns-001";
+    const subscription = body.subscription;
+    const role = body.role || "CONSUMER";
+
+    if (!subscription || !subscription.endpoint) {
+      return c.json({ success: false, message: "Subscription payload tidak valid." }, 400);
+    }
+
+    await saveSubscription(c.env, userId, { ...subscription, role });
+    return c.json({ success: true, message: "Browser berhasil didaftarkan untuk Web Push Notification." });
+  } catch (error: any) {
+    return c.json({ success: false, message: error.message }, 500);
+  }
+});
+
+app.post("/api/notifications/test-push", async (c) => {
+  try {
+    const body = await c.req.json().catch(() => ({}));
+    const userId = body.userId || "usr-cns-001";
+    const subscription = await getSubscription(c.env, userId);
+
+    if (!subscription) {
+      return c.json({
+        success: false,
+        message: "Pengguna belum mengaktifkan izin Web Push di browser perangkat ini.",
+      }, 404);
+    }
+
+    const result = await sendWebPush(c.env, subscription, {
+      title: "🌱 FOODRESCUE: Notifikasi Aktif!",
+      body: "Layanan Web Push Notification berhasil terhubung ke browser Anda.",
+      url: "/orders",
+    });
+
+    return c.json(result);
+  } catch (error: any) {
+    return c.json({ success: false, message: error.message }, 500);
   }
 });
 
