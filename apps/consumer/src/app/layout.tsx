@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import { ConsumerAuthGuard } from "@/components/auth-guard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,9 +46,11 @@ export default function RootLayout({
       <body className="min-h-full bg-[#EDE8DD] text-foreground flex justify-center selection:bg-[#2D6A4F]/20 selection:text-[#1C1917]">
         {/* Mobile Device Canvas Frame */}
         <div className="relative flex flex-col min-h-screen w-full max-w-md bg-background shadow-2xl pb-16">
-          <main className="flex-1 flex flex-col">{children}</main>
-          <PWAInstallPrompt />
-          <BottomNav />
+          <ConsumerAuthGuard>
+            <main className="flex-1 flex flex-col">{children}</main>
+            <PWAInstallPrompt />
+            <BottomNav />
+          </ConsumerAuthGuard>
         </div>
       </body>
     </html>

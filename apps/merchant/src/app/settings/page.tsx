@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Building,
@@ -21,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { merchantApi } from "@/lib/api-client";
 
 export default function MerchantSettingsPage() {
+  const router = useRouter();
   const [isStoreOpen, setIsStoreOpen] = useState(true);
   const [storeName, setStoreName] = useState("");
   const [category, setCategory] = useState("Bakery & Pastry");
@@ -382,13 +384,18 @@ export default function MerchantSettingsPage() {
 
           {/* Form Bottom Bar */}
           <div className="border-t border-border/70 pt-2 flex items-center justify-between gap-2">
-            <Link
-              href="/login"
-              className="flex items-center gap-1.5 text-xs font-bold text-destructive hover:underline"
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.removeItem("fr_merchant_token");
+                localStorage.removeItem("fr_merchant");
+                router.replace("/login");
+              }}
+              className="flex items-center gap-1.5 text-xs font-bold text-destructive hover:underline cursor-pointer"
             >
               <LogOut className="h-3.5 w-3.5" />
               <span>Keluar dari Akun</span>
-            </Link>
+            </button>
 
             <div className="flex items-center gap-2">
               {saved && (

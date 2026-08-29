@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Award,
@@ -50,6 +51,7 @@ const ALLERGEN_OPTIONS = [
 ];
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -226,16 +228,21 @@ export default function ProfilePage() {
       </Card>
 
       {/* Logout */}
-      <Button
-        asChild
-        variant="ghost"
-        className="w-full justify-center gap-2 text-xs font-bold text-destructive hover:bg-destructive/10 hover:text-destructive h-10 rounded-xl"
-      >
-        <Link href="/login">
+      {user && (
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            localStorage.removeItem("fr_token");
+            localStorage.removeItem("fr_user");
+            router.replace("/login");
+          }}
+          className="w-full justify-center gap-2 text-xs font-bold text-destructive hover:bg-destructive/10 hover:text-destructive h-10 rounded-xl"
+        >
           <LogOut className="h-4 w-4" />
           <span>Keluar dari Akun</span>
-        </Link>
-      </Button>
+        </Button>
+      )}
 
       <div className="text-center text-[10px] text-muted-foreground pt-1">
         FOODRESCUE v1.0.0 (MVP) • Save Food. Save Money.
