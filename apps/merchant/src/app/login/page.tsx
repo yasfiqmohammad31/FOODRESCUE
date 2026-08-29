@@ -34,8 +34,8 @@ function GoogleIcon({ className = "h-4 w-4" }: { className?: string }) {
 
 export default function MerchantLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("owner@artisanbakery.com");
-  const [password, setPassword] = useState("rahasiabisnis");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);

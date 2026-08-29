@@ -27,12 +27,14 @@ app.use(
         !origin ||
         origin.includes("localhost") ||
         origin.includes("127.0.0.1") ||
-        origin.endsWith(".pages.dev") ||
-        origin.includes("foodrescue.id")
+        origin.includes("vercel.app") ||
+        origin.includes("pages.dev") ||
+        origin.includes("foodrescue") ||
+        origin.includes("workers.dev")
       ) {
         return origin || "*";
       }
-      return "http://localhost:3000";
+      return origin;
     },
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "X-Idempotency-Key", "x-callback-token"],

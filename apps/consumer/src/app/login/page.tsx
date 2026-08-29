@@ -35,8 +35,8 @@ function GoogleIcon({ className = "h-4 w-4" }: { className?: string }) {
 export default function ConsumerLoginPage() {
   const router = useRouter();
   const [authMethod, setAuthMethod] = useState<"phone" | "email">("phone");
-  const [identifier, setIdentifier] = useState("081234567890");
-  const [password, setPassword] = useState("rahasiapassword");
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
