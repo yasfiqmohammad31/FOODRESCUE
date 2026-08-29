@@ -10,6 +10,7 @@ import { payoutsRouter } from "./modules/payouts/payouts.router";
 import { vouchersRouter } from "./modules/vouchers/vouchers.router";
 import { aiRouter } from "./modules/ai/ai.router";
 import { impactRouter } from "./modules/impact/impact.router";
+import { sendEmail } from "./modules/notifications/email.service";
 import { db } from "./db/mock-db";
 import type { Env } from "./types";
 
@@ -152,6 +153,32 @@ app.get("/api/geocode/search", async (c) => {
     return c.json({ success: true, results });
   } catch (error: any) {
     return c.json({ success: false, results: [], message: error.message });
+  }
+});
+
+// Email Test Endpoint (Resend API)
+app.post("/api/notifications/test-email", async (c) => {
+  try {
+    const body = await c.req.json().catch(() => ({}));
+    const to = body.to || "test@foodrescue.id";
+    const result = await sendEmail(c.env, {
+      to,
+      subject: "🌱 [FOODRESCUE] Uji Coba Pengiriman Resend Email Berhasil!",
+      html: `
+        <div style="font-family: sans-serif; padding: 24px; background: #f6f5f0;">
+          <div style="max-width: 500px; background: #fff; border-radius: 12px; padding: 24px; border: 1px solid #e7e5e4;">
+            <h2 style="color: #166534; margin-top: 0;">🌱 FOODRESCUE Resend Email Service</h2>
+            <p>Halo! Ini adalah email uji coba dari backend Cloudflare Workers FOODRESCUE.</p>
+            <p>Integrasi <strong>Resend API</strong> telah terpasang dan berfungsi normal pada runtime Edge.</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 11px; color: #888;">© 2026 FOODRESCUE Indonesia</p>
+          </div>
+        </div>
+      `,
+    });
+    return c.json(result);
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
   }
 });
 

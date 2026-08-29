@@ -3,6 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { db } from "../../db/mock-db";
 import { sanitizeText } from "../../utils/security";
+import { buildOrderConfirmationEmail, buildUndoRefundEmail, safeDispatch, sendEmail } from "../notifications/email.service";
 import type { Env, Order, OrderStatus, PaymentMethod } from "../../types";
 
 export const ordersRouter = new Hono<{ Bindings: Env }>();
@@ -108,6 +109,13 @@ ordersRouter.post("/", zValidator("json", createOrderSchema), (c) => {
 
   db.orders.unshift(newOrder);
 
+  // Dispatch Order Confirmation Email via Resend
+  const consumerUser = db.users.find((u) => u.id === consumerId);
+  const merchantProfile = db.merchants.find((m) => m.id === listing.merchantId);
+  const targetEmail = consumerUser?.email || "alex@kampus.ac.id";
+  const { subject, html } = buildOrderConfirmationEmail(newOrder, listing, merchantProfile, consumerUser?.name);
+  safeDispatch(c, sendEmail(c.env, { to: targetEmail, subject, html }));
+
   return c.json({
     success: true,
     message: "Pembayaran berhasil. Jeda 60s Instant Undo aktif.",
@@ -202,6 +210,12 @@ ordersRouter.post("/:id/undo", (c) => {
   order.status = "CANCELLED_CONSUMER_UNDO";
   order.cancelledAt = new Date().toISOString();
   order.cancelReason = "Dibatalkan oleh pembeli dalam jeda waktu 60s";
+
+  // Dispatch Undo Refund Confirmation Email via Resend
+  const consumerUser = db.users.find((u) => u.id === order.consumerId);
+  const targetEmail = consumerUser?.email || "alex@kampus.ac.id";
+  const { subject, html } = buildUndoRefundEmail(order, order.totalPrice, userWallet.balance, consumerUser?.name);
+  safeDispatch(c, sendEmail(c.env, { to: targetEmail, subject, html }));
 
   return c.json({
     success: true,
