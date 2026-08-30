@@ -12,7 +12,7 @@ import { aiRouter } from "./modules/ai/ai.router";
 import { impactRouter } from "./modules/impact/impact.router";
 import { sendEmail } from "./modules/notifications/email.service";
 import { getSubscription, saveSubscription, sendWebPush, VAPID_KEYS } from "./modules/notifications/push.service";
-import { db } from "./db/mock-db";
+import { db, resetDbToEmpty } from "./db/mock-db";
 import type { Env } from "./types";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -120,6 +120,22 @@ app.route("/api/payouts", payoutsRouter);
 app.route("/api/vouchers", vouchersRouter);
 app.route("/api/ai", aiRouter);
 app.route("/api/impact", impactRouter);
+
+// Developer Database Reset Endpoint (100% Clean Slate)
+app.all("/api/dev/reset-db", (c) => {
+  resetDbToEmpty();
+  return c.json({
+    success: true,
+    message: "Database in-memory telah berhasil dikosongkan 100%.",
+    state: {
+      usersCount: db.users.length,
+      merchantsCount: db.merchants.length,
+      listingsCount: db.listings.length,
+      ordersCount: db.orders.length,
+      payoutsCount: db.payouts.length,
+    },
+  });
+});
 
 // Geocoding Search Proxy
 app.get("/api/geocode/search", async (c) => {
