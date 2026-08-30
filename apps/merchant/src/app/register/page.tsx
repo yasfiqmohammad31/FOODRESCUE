@@ -63,6 +63,7 @@ export default function MerchantRegisterPage() {
         method: "POST",
         body: JSON.stringify({
           name: ownerName.trim() || storeName.trim(),
+          storeName: storeName.trim(),
           email: email.trim(),
           phone: phone.trim(),
           password,
@@ -71,6 +72,14 @@ export default function MerchantRegisterPage() {
       });
       if (res.success && res.token) {
         localStorage.setItem("fr_merchant_token", res.token);
+        const userData = {
+          ...(res.user || {}),
+          storeName: storeName.trim(),
+          name: ownerName.trim() || storeName.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
+        };
+        localStorage.setItem("fr_merchant", JSON.stringify(userData));
       }
       router.push("/onboarding");
     } catch {

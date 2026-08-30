@@ -67,8 +67,8 @@ export function getMerchantForContext(c: any): MerchantProfile {
             const newM: MerchantProfile = {
               id: `mer-${user.id}`,
               userId: user.id,
-              storeName: user.name || "Mitra Gerai",
-              category: "Bakery & Pastry",
+              storeName: (user as any).storeName || user.name || "Mitra Gerai",
+              category: (user as any).category || "Bakery & Pastry",
               businessPhone: user.phone || "",
               address: "",
               location: { lat: -7.2856, lng: 112.6954 },
@@ -80,7 +80,7 @@ export function getMerchantForContext(c: any): MerchantProfile {
               isStoreOpen: false,
               agreedSlaAt: new Date().toISOString(),
               picName: user.name || "Pemilik Gerai",
-              avgRating: 5.0,
+              avgRating: null as any,
               totalReviews: 0,
               isVerified: false,
               createdAt: new Date().toISOString(),
@@ -110,7 +110,7 @@ export function getMerchantForContext(c: any): MerchantProfile {
     bankName: "BCA",
     accountNumber: "8271928401",
     accountHolder: "Artisan Bakery Official",
-    isStoreOpen: true,
+    isStoreOpen: false,
     agreedSlaAt: new Date().toISOString(),
     picName: "Budi Santoso",
     avgRating: 5.0,
@@ -133,12 +133,34 @@ merchantsRouter.patch("/profile", zValidator("json", updateProfileSchema), (c) =
   const body = c.req.valid("json");
   const merchant = getMerchantForContext(c);
 
+  // Validate active listing if merchant wants to open store
+  if (body.isStoreOpen === true && !merchant.isStoreOpen) {
+    const activeListings = db.listings.filter(
+      (l) =>
+        (l.merchantId === merchant.id || l.merchantId === merchant.userId) &&
+        l.status === "ACTIVE" &&
+        l.quantityRemaining > 0
+    );
+    if (activeListings.length === 0) {
+      return c.json(
+        {
+          success: false,
+          message:
+            "Tidak dapat membuka gerai: Harap buat minimal 1 paket listing makanan surplus aktif terlebih dahulu.",
+          reason: "NO_ACTIVE_LISTINGS",
+        },
+        400
+      );
+    }
+  }
+
   if (body.storeName) merchant.storeName = sanitizeText(body.storeName);
   if (body.category) merchant.category = sanitizeText(body.category);
   if (body.address !== undefined) merchant.address = sanitizeText(body.address);
   if (body.businessPhone) merchant.businessPhone = body.businessPhone;
   if (body.openTime) merchant.openTime = body.openTime;
   if (body.closeTime) merchant.closeTime = body.closeTime;
+  if (body.operatingDays) merchant.operatingDays = body.operatingDays;
   if (body.bankName) merchant.bankName = body.bankName;
   if (body.accountNumber !== undefined) merchant.accountNumber = body.accountNumber.replace(/\D/g, "");
   if (body.accountHolder !== undefined) merchant.accountHolder = sanitizeText(body.accountHolder);
@@ -154,20 +176,22 @@ merchantsRouter.patch("/profile", zValidator("json", updateProfileSchema), (c) =
 // GET /merchants/stats
 merchantsRouter.get("/stats", (c) => {
   const merchant = getMerchantForContext(c);
-  const merchantOrders = db.orders.filter((o) => o.merchantId === merchant.id);
+  const merchantOrders = db.orders.filter((o) => o.merchantId === merchant.id || o.merchantId === merchant.userId);
   const completedOrders = merchantOrders.filter(
     (o) => o.status === "PICKED_UP" || o.status === "READY" || o.status === "CONFIRMED"
+  );
+  const pendingOrders = merchantOrders.filter(
+    (o) => o.status === "CONFIRMED" || o.status === "PREPARING"
   );
 
   const todayRevenue = completedOrders.reduce((sum, o) => sum + Math.round(o.totalPrice * 0.85), 0);
   const todayPortionsSaved = completedOrders.reduce((sum, o) => sum + o.quantity, 0);
   const activeListingsCount = db.listings.filter(
-    (l) => l.merchantId === merchant.id && l.status === "ACTIVE" && l.quantityRemaining > 0
+    (l) =>
+      (l.merchantId === merchant.id || l.merchantId === merchant.userId) &&
+      l.status === "ACTIVE" &&
+      l.quantityRemaining > 0
   ).length;
-
-  const pendingOrders = merchantOrders.filter(
-    (o) => o.status === "CONFIRMED" || o.status === "PREPARING" || o.status === "UNDO_WINDOW"
-  );
 
   return c.json({
     success: true,
@@ -177,7 +201,7 @@ merchantsRouter.get("/stats", (c) => {
       availableBalance: todayRevenue,
       activeListingsCount,
       pendingOrdersCount: pendingOrders.length,
-      storeRating: merchant.avgRating || 5.0,
+      storeRating: (merchant.totalReviews && merchant.totalReviews > 0) ? (merchant.avgRating || 5.0) : null,
       totalReviews: merchant.totalReviews || 0,
       isStoreOpen: merchant.isStoreOpen ?? false,
     },
@@ -187,6 +211,29 @@ merchantsRouter.get("/stats", (c) => {
 // PATCH /merchants/toggle-status
 merchantsRouter.patch("/toggle-status", (c) => {
   const merchant = getMerchantForContext(c);
+
+  if (!merchant.isStoreOpen) {
+    // Attempting to OPEN store: check if active listings exist
+    const activeListings = db.listings.filter(
+      (l) =>
+        (l.merchantId === merchant.id || l.merchantId === merchant.userId) &&
+        l.status === "ACTIVE" &&
+        l.quantityRemaining > 0
+    );
+    if (activeListings.length === 0) {
+      return c.json(
+        {
+          success: false,
+          message:
+            "Tidak dapat membuka gerai: Harap buat minimal 1 paket listing makanan surplus aktif terlebih dahulu.",
+          reason: "NO_ACTIVE_LISTINGS",
+          isStoreOpen: false,
+        },
+        400
+      );
+    }
+  }
+
   merchant.isStoreOpen = !merchant.isStoreOpen;
 
   return c.json({
@@ -212,6 +259,7 @@ merchantsRouter.post("/onboarding/step-1", zValidator("json", step1Schema), (c) 
   merchant.address = sanitizeText(body.address);
   merchant.openTime = body.openTime;
   merchant.closeTime = body.closeTime;
+  if (body.operatingDays) merchant.operatingDays = body.operatingDays;
 
   return c.json({ success: true, message: "Identitas gerai tersimpan." });
 });
@@ -240,11 +288,11 @@ merchantsRouter.post("/onboarding/step-3", zValidator("json", step3Schema), (c) 
   merchant.agreedSlaAt = new Date().toISOString();
   merchant.picName = sanitizeText(body.picName);
   merchant.isVerified = true;
-  merchant.isStoreOpen = true;
+  merchant.isStoreOpen = false; // Remains closed until merchant publishes first listing!
 
   return c.json({
     success: true,
-    message: "Verifikasi SLA berhasil. Gerai Anda resmi terdaftar dan aktif!",
+    message: "Verifikasi SLA berhasil. Gerai Anda resmi terdaftar!",
     merchant,
   });
 });

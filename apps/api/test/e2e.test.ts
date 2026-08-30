@@ -143,14 +143,11 @@ async function runE2ETests() {
     assert(data.merchant.isVerified === true, "Expected merchant verified");
   });
 
-  await test("1.6 Merchant toggles store open/close status", async () => {
-    const res1 = await api("/api/merchants/toggle-status", { method: "PATCH" });
-    const data1 = await res1.json();
-    assert(data1.isStoreOpen === false, "Store should be closed");
-
-    const res2 = await api("/api/merchants/toggle-status", { method: "PATCH" });
-    const data2 = await res2.json();
-    assert(data2.isStoreOpen === true, "Store should be open again");
+  await test("1.6 Merchant cannot open store without active listings", async () => {
+    const res = await api("/api/merchants/toggle-status", { method: "PATCH" });
+    assert(res.status === 400, "Store opening should be rejected when 0 listings exist");
+    const data = await res.json();
+    assert(data.reason === "NO_ACTIVE_LISTINGS", "Expected NO_ACTIVE_LISTINGS reason");
   });
 
   // -------------------------------------------------------------
@@ -178,7 +175,7 @@ async function runE2ETests() {
     assert(res.status === 201, `Expected 201, got ${res.status}`);
     const data = await res.json();
     assert(data.success === true, "Expected listing created");
-    assert(data.listing.quantityRemaining === 8, "Expected quantity 8");
+    assert(data.listing.status === "ACTIVE", "Expected status ACTIVE");
     listingMysteryId = data.listing.id;
   });
 
@@ -187,12 +184,12 @@ async function runE2ETests() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title: "Artisan Sourdough Batard",
-        description: "Sourdough batard artisan fermentasi alami.",
+        title: "Sourdough Bread Whole Loaf",
+        description: "Roti artisan sourdough fermentasi alami 24 jam.",
         category: "REGULAR",
-        originalPrice: 40000,
-        discountedPrice: 18000,
-        quantityTotal: 5,
+        originalPrice: 45000,
+        discountedPrice: 22000,
+        quantityTotal: 4,
         pickupStart: new Date(Date.now() + 1000 * 60 * 30).toISOString(),
         pickupEnd: new Date(Date.now() + 1000 * 60 * 180).toISOString(),
         allergens: ["Gluten"],
@@ -229,6 +226,13 @@ async function runE2ETests() {
     assert(res.status === 200, `Expected 200, got ${res.status}`);
     const data = await res.json();
     assert(data.success === true, "Expected AI price applied");
+  });
+
+  await test("2.5 Merchant opens store now that active listings exist", async () => {
+    const res = await api("/api/merchants/toggle-status", { method: "PATCH" });
+    assert(res.status === 200, `Expected 200, got ${res.status}`);
+    const data = await res.json();
+    assert(data.isStoreOpen === true, "Store should now be open");
   });
 
   // -------------------------------------------------------------

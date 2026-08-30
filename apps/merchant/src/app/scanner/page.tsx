@@ -250,29 +250,58 @@ export default function MerchantScannerPage() {
           </Badge>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={switchCamera}
-              className="p-2 rounded-xl bg-white/10 text-white border border-white/20 hover:bg-white/20 transition"
-              title="Ganti Kamera"
-              aria-label="Ganti Kamera Depan / Belakang"
-            >
-              <SwitchCamera className="h-4 w-4" />
-            </button>
+            {/* Toggle Camera On/Off */}
+            {isCameraActive ? (
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-destructive/20 text-destructive-foreground border border-destructive/40 text-xs font-bold hover:bg-destructive/30 transition shadow-2xs"
+                title="Matikan Kamera"
+                aria-label="Matikan Kamera"
+              >
+                <VideoOff className="h-3.5 w-3.5 text-red-400" />
+                <span className="text-[11px] text-red-300">Matikan Kamera</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => startCamera(facingMode)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold hover:bg-emerald-600/40 transition shadow-2xs"
+                title="Nyalakan Kamera"
+                aria-label="Nyalakan Kamera"
+              >
+                <Camera className="h-3.5 w-3.5 text-emerald-400" />
+                <span className="text-[11px] text-emerald-300">Nyalakan Kamera</span>
+              </button>
+            )}
 
-            <button
-              type="button"
-              onClick={toggleTorch}
-              className={`p-2 rounded-xl border transition ${
-                flashlightOn
-                  ? "bg-amber-400 text-amber-950 border-amber-300 shadow-xs"
-                  : "bg-white/10 text-white border-white/20 hover:bg-white/20"
-              }`}
-              title="Lampu Kilat"
-              aria-label={flashlightOn ? "Matikan Lampu Kilat" : "Nyalakan Lampu Kilat"}
-            >
-              <Flashlight className="h-4 w-4" />
-            </button>
+            {isCameraActive && (
+              <>
+                <button
+                  type="button"
+                  onClick={switchCamera}
+                  className="p-2 rounded-xl bg-white/10 text-white border border-white/20 hover:bg-white/20 transition"
+                  title="Ganti Kamera"
+                  aria-label="Ganti Kamera Depan / Belakang"
+                >
+                  <SwitchCamera className="h-4 w-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={toggleTorch}
+                  className={`p-2 rounded-xl border transition ${
+                    flashlightOn
+                      ? "bg-amber-400 text-amber-950 border-amber-300 shadow-xs"
+                      : "bg-white/10 text-white border-white/20 hover:bg-white/20"
+                  }`}
+                  title="Lampu Kilat"
+                  aria-label={flashlightOn ? "Matikan Lampu Kilat" : "Nyalakan Lampu Kilat"}
+                >
+                  <Flashlight className="h-4 w-4" />
+                </button>
+              </>
+            )}
           </div>
         </div>
 

@@ -62,6 +62,12 @@ authRouter.post("/login", zValidator("json", loginSchema), async (c) => {
     createdAt: new Date().toISOString(),
   };
 
+  let storeName: string | undefined = undefined;
+  if (user.role === "MERCHANT") {
+    const merchant = db.merchants.find((m) => m.userId === user.id || m.id === user.id);
+    storeName = merchant?.storeName || (user as any).storeName || user.name;
+  }
+
   const secret = c.env.JWT_ACCESS_SECRET || "foodrescue_jwt_secret";
   const token = await signJwt(
     { sub: user.id, role: user.role, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 },
@@ -72,13 +78,15 @@ authRouter.post("/login", zValidator("json", loginSchema), async (c) => {
     success: true,
     message: "Login berhasil",
     token,
-    user,
+    user: { ...user, ...(storeName ? { storeName } : {}) },
   });
 });
 
 // POST /auth/register
 authRouter.post("/register", zValidator("json", registerSchema), async (c) => {
   const body = c.req.valid("json");
+
+  const chosenStoreName = sanitizeText(body.storeName || body.name || "Mitra Gerai");
 
   const newUser: User = {
     id: `usr-${Date.now().toString().slice(-6)}`,
@@ -110,7 +118,7 @@ authRouter.post("/register", zValidator("json", registerSchema), async (c) => {
     db.merchants.push({
       id: `mer-${newUser.id}`,
       userId: newUser.id,
-      storeName: sanitizeText(body.storeName || body.name || "Mitra Gerai"),
+      storeName: chosenStoreName,
       category: sanitizeText(body.category || "Bakery & Pastry"),
       businessPhone: newUser.phone,
       address: "",
@@ -123,7 +131,7 @@ authRouter.post("/register", zValidator("json", registerSchema), async (c) => {
       isStoreOpen: false, // Default is closed for newly registered stores!
       agreedSlaAt: new Date().toISOString(),
       picName: newUser.name,
-      avgRating: 5.0,
+      avgRating: null as any,
       totalReviews: 0,
       isVerified: false,
       createdAt: new Date().toISOString(),
@@ -140,7 +148,10 @@ authRouter.post("/register", zValidator("json", registerSchema), async (c) => {
     success: true,
     message: "Registrasi akun berhasil",
     token,
-    user: newUser,
+    user: {
+      ...newUser,
+      ...(body.role === "MERCHANT" ? { storeName: chosenStoreName } : {}),
+    },
   });
 });
 
@@ -216,12 +227,18 @@ authRouter.post("/google", zValidator("json", googleAuthSchema), async (c) => {
         isStoreOpen: false,
         agreedSlaAt: new Date().toISOString(),
         picName: user.name,
-        avgRating: 5.0,
+        avgRating: null as any,
         totalReviews: 0,
         isVerified: false,
         createdAt: new Date().toISOString(),
       });
     }
+  }
+
+  let storeName: string | undefined = undefined;
+  if (user.role === "MERCHANT") {
+    const merchant = db.merchants.find((m) => m.userId === user.id || m.id === user.id);
+    storeName = merchant?.storeName || (user as any).storeName || user.name;
   }
 
   const secret = c.env.JWT_ACCESS_SECRET || "foodrescue_jwt_secret";
@@ -234,7 +251,7 @@ authRouter.post("/google", zValidator("json", googleAuthSchema), async (c) => {
     success: true,
     message: "Autentikasi Google berhasil",
     token,
-    user,
+    user: { ...user, ...(storeName ? { storeName } : {}) },
   });
 });
 

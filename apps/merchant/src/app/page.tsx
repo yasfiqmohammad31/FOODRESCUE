@@ -104,18 +104,30 @@ export default function MerchantDashboardPage() {
 
   const handleConfirmStoreToggle = async () => {
     const nextStatus = !isStoreOpen;
-    setIsStoreOpen(nextStatus);
+
+    if (nextStatus && stats.activeListingsCount === 0) {
+      setIsToggleStoreModalOpen(false);
+      setToastMessage("Tidak dapat membuka gerai: Buat minimal 1 listing surplus aktif terlebih dahulu.");
+      setTimeout(() => setToastMessage(null), 4000);
+      return;
+    }
+
     setIsToggleStoreModalOpen(false);
     try {
-      await merchantApi.toggleStoreStatus();
-    } catch (e) {
-      console.warn("Store toggle fallback:", e);
+      const res = await merchantApi.toggleStoreStatus();
+      if (res.success && typeof res.isStoreOpen === "boolean") {
+        setIsStoreOpen(res.isStoreOpen);
+        setToastMessage(
+          res.isStoreOpen
+            ? "Gerai Anda sekarang BUKA. Listing aktif terlihat oleh pembeli."
+            : "Gerai Anda DITUTUP SEMENTARA. Listing disembunyikan dari pembeli."
+        );
+      } else {
+        setToastMessage(res.message || "Gagal mengubah status gerai.");
+      }
+    } catch (e: any) {
+      setToastMessage(e.message || "Gagal mengubah status gerai.");
     }
-    setToastMessage(
-      nextStatus
-        ? "Gerai Anda sekarang BUKA. Listing aktif kembali terlihat oleh pembeli."
-        : "Gerai Anda sekarang DITUTUP SEMENTARA. Listing disembunyikan dari aplikasi pembeli."
-    );
     setTimeout(() => setToastMessage(null), 4000);
   };
 
@@ -296,10 +308,12 @@ export default function MerchantDashboardPage() {
                 Rating Gerai
               </span>
               <div className="text-sm sm:text-base font-black text-foreground tabular-nums mt-0.5">
-                ★ {stats.storeRating.toFixed(1)}
+                {stats.totalReviews > 0 && stats.storeRating !== null
+                  ? `★ ${Number(stats.storeRating).toFixed(1)}`
+                  : "Baru"}
               </div>
               <span className="text-[9px] text-muted-foreground font-medium mt-0.5 block truncate">
-                {stats.totalReviews} ulasan
+                {stats.totalReviews > 0 ? `${stats.totalReviews} ulasan` : "Belum ada ulasan"}
               </span>
             </div>
           </div>

@@ -60,6 +60,15 @@ aiRouter.post("/sentiment-analysis", zValidator("json", reviewSchema), async (c)
 
   db.reviews.unshift(newReview);
 
+  // Update merchant average rating and review count
+  const merchant = db.merchants.find((m) => m.id === merchantId || m.userId === merchantId);
+  if (merchant) {
+    const merchantReviews = db.reviews.filter((r) => r.merchantId === merchant.id || r.merchantId === merchantId);
+    merchant.totalReviews = merchantReviews.length;
+    const sumRating = merchantReviews.reduce((sum, r) => sum + r.rating, 0);
+    merchant.avgRating = Math.round((sumRating / merchantReviews.length) * 10) / 10;
+  }
+
   return c.json({
     success: true,
     message: sentiment === "CRITICAL_FOOD_SAFETY"
@@ -69,6 +78,21 @@ aiRouter.post("/sentiment-analysis", zValidator("json", reviewSchema), async (c)
     criticalFlag: sentiment === "CRITICAL_FOOD_SAFETY",
     review: newReview,
   });
+});
+
+// GET /ai/reviews
+aiRouter.get("/reviews", (c) => {
+  const orderId = c.req.query("orderId");
+  const merchantId = c.req.query("merchantId");
+
+  let list = db.reviews;
+  if (orderId) {
+    list = list.filter((r) => r.orderId === orderId);
+  } else if (merchantId) {
+    list = list.filter((r) => r.merchantId === merchantId);
+  }
+
+  return c.json({ success: true, reviews: list });
 });
 
 // POST /ai/dynamic-pricing (Surplus Closing Time Price Recommendation)

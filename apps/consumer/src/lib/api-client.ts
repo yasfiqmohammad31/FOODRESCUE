@@ -139,6 +139,33 @@ export const consumerApi = {
     return res;
   },
 
+  // Reviews & Sentiment Moderation
+  async submitReview(payload: {
+    orderId: string;
+    rating: number;
+    comment: string;
+    consumerId?: string;
+  }) {
+    return fetchApi<{
+      success: boolean;
+      message: string;
+      sentiment?: string;
+      criticalFlag?: boolean;
+      review?: any;
+    }>("/api/ai/sentiment-analysis", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async getReviews(params?: { orderId?: string; merchantId?: string }) {
+    const query = new URLSearchParams();
+    if (params?.orderId) query.set("orderId", params.orderId);
+    if (params?.merchantId) query.set("merchantId", params.merchantId);
+    const qs = query.toString();
+    return fetchApi<{ success: boolean; reviews: any[] }>(`/api/ai/reviews${qs ? `?${qs}` : ""}`);
+  },
+
   // Auth
   async login(identifier: string, password: string, role: string = "CONSUMER") {
     return fetchApi("/api/auth/login", {
@@ -178,14 +205,6 @@ export const consumerApi = {
   async updateProfile(data: { id?: string; name?: string; phone?: string }) {
     return fetchApi<{ success: boolean; message: string; user?: any }>("/api/auth/profile", {
       method: "PATCH",
-      body: JSON.stringify(data),
-    });
-  },
-
-  // Review & AI Moderation
-  async submitReview(data: { orderId: string; rating: number; comment: string; consumerId?: string }) {
-    return fetchApi("/api/ai/sentiment-analysis", {
-      method: "POST",
       body: JSON.stringify(data),
     });
   },

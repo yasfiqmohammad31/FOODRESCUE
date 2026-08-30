@@ -39,7 +39,20 @@ app.use(
       return origin;
     },
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-Idempotency-Key", "x-callback-token"],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Idempotency-Key",
+      "x-callback-token",
+      "x-user-id",
+      "X-User-Id",
+      "x-merchant-id",
+      "X-Merchant-Id",
+      "x-app-version",
+      "X-App-Version",
+      "Accept",
+      "Origin",
+    ],
     credentials: true,
   })
 );

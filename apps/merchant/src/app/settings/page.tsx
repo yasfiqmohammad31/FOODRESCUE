@@ -117,6 +117,20 @@ export default function MerchantSettingsPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleToggleStore = async () => {
+    setErrors({});
+    try {
+      const res = await merchantApi.toggleStoreStatus();
+      if (res.success && typeof res.isStoreOpen === "boolean") {
+        setIsStoreOpen(res.isStoreOpen);
+      } else {
+        setErrors({ storeStatus: res.message || "Tidak dapat membuka gerai: Buat minimal 1 listing makanan surplus terlebih dahulu." });
+      }
+    } catch (err: any) {
+      setErrors({ storeStatus: err.message || "Gagal mengubah status gerai." });
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -124,7 +138,7 @@ export default function MerchantSettingsPage() {
     }
 
     try {
-      await merchantApi.updateProfile({
+      const res = await merchantApi.updateProfile({
         storeName,
         category,
         address,
@@ -137,10 +151,19 @@ export default function MerchantSettingsPage() {
         isStoreOpen,
       });
 
+      if (res.success === false) {
+        setErrors({ general: res.message || "Gagal menyimpan pengaturan gerai." });
+        if (res.reason === "NO_ACTIVE_LISTINGS") {
+          setIsStoreOpen(false);
+        }
+        return;
+      }
+
       const userRaw = localStorage.getItem("fr_merchant");
       if (userRaw) {
         const user = JSON.parse(userRaw);
         user.storeName = storeName;
+        user.category = category;
         localStorage.setItem("fr_merchant", JSON.stringify(user));
       }
     } catch (err) {
@@ -162,6 +185,14 @@ export default function MerchantSettingsPage() {
           Kelola profil gerai, status operasional, dan rekening pencairan dana.
         </p>
       </div>
+
+      {/* Error Alert */}
+      {(errors.storeStatus || errors.general) && (
+        <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-xs font-bold flex items-start gap-2 animate-in fade-in">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>{errors.storeStatus || errors.general}</span>
+        </div>
+      )}
 
       {/* Instant Store Status Card */}
       <Card className="p-4 bg-card border-border shadow-2xs rounded-2xl flex items-center justify-between gap-3">
@@ -190,7 +221,7 @@ export default function MerchantSettingsPage() {
 
         <button
           type="button"
-          onClick={() => setIsStoreOpen(!isStoreOpen)}
+          onClick={handleToggleStore}
           className={`px-3 py-1.5 rounded-xl text-xs font-black transition border shrink-0 ${
             isStoreOpen
               ? "bg-destructive text-white hover:bg-destructive/90 border-destructive"
