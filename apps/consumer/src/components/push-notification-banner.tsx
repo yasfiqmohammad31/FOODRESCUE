@@ -82,8 +82,12 @@ export function PushNotificationBanner() {
 
         setIsSubscribed(true);
       }
-    } catch (err) {
-      console.error("[Push Subscribe Error]", err);
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        console.info("[Push Service] Push subscription not available on this browser/network (e.g. Incognito mode or Google Push Service unavailable).");
+      } else {
+        console.warn("[Push Subscribe Warning]", err?.message || err);
+      }
     } finally {
       setIsSubscribing(false);
     }
