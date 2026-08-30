@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
@@ -35,6 +35,9 @@ export default function MerchantOnboardingPage() {
   const [address, setAddress] = useState("");
   const [openTime, setOpenTime] = useState("08:00");
   const [closeTime, setCloseTime] = useState("21:00");
+  const [operatingDays, setOperatingDays] = useState<string[]>([
+    "Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"
+  ]);
 
   // Step 2: Rekening Pencairan
   const [bankName, setBankName] = useState("BCA");
@@ -48,6 +51,31 @@ export default function MerchantOnboardingPage() {
 
   // Validation state
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Prefill from registration data
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userRaw = localStorage.getItem("fr_merchant");
+      if (userRaw) {
+        try {
+          const user = JSON.parse(userRaw);
+          if (user.storeName) setStoreName(user.storeName);
+          if (user.name) setPicName(user.name);
+          if (user.phone) setPhone(user.phone);
+        } catch {}
+      }
+    }
+  }, []);
+
+  const toggleDay = (day: string) => {
+    if (operatingDays.includes(day)) {
+      if (operatingDays.length > 1) {
+        setOperatingDays(operatingDays.filter((d) => d !== day));
+      }
+    } else {
+      setOperatingDays([...operatingDays, day]);
+    }
+  };
 
   const handleNextStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -314,6 +342,32 @@ export default function MerchantOnboardingPage() {
                 />
               </div>
             </div>
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                Hari Operasional Gerai
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((day) => {
+                  const isSelected = operatingDays.includes(day);
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => toggleDay(day)}
+                      className={`flex-1 min-w-[38px] py-1.5 text-center text-xs font-bold rounded-lg border transition ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground border-primary shadow-2xs"
+                          : "bg-background text-muted-foreground border-border hover:bg-muted"
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {errors.operationalHours && (
               <span className="text-[10px] text-destructive font-semibold block">
                 {errors.operationalHours}

@@ -9,6 +9,9 @@ export async function fetchMerchantApi<T = any>(
 ): Promise<{ success: boolean; data?: T; message?: string; [key: string]: any }> {
   try {
     const token = typeof window !== "undefined" ? localStorage.getItem("fr_merchant_token") : null;
+    const userRaw = typeof window !== "undefined" ? localStorage.getItem("fr_merchant") : null;
+    const user = userRaw ? JSON.parse(userRaw) : null;
+
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...(options.headers as Record<string, string>),
@@ -16,6 +19,9 @@ export async function fetchMerchantApi<T = any>(
 
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
+    }
+    if (user?.id) {
+      headers["x-user-id"] = user.id;
     }
 
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -49,7 +55,7 @@ export const merchantApi = {
       pendingOrdersCount: 0,
       storeRating: 5.0,
       totalReviews: 0,
-      isStoreOpen: true,
+      isStoreOpen: false,
     };
   },
 
@@ -61,6 +67,13 @@ export const merchantApi = {
 
   async getProfile() {
     return fetchMerchantApi("/api/merchants/profile");
+  },
+
+  async updateProfile(data: any) {
+    return fetchMerchantApi("/api/merchants/profile", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
   },
 
   // Onboarding

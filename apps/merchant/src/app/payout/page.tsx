@@ -45,6 +45,12 @@ export default function MerchantPayoutPage() {
   const [errorText, setErrorText] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  const [bankInfo, setBankInfo] = useState({
+    bankName: "BCA",
+    accountNumber: "",
+    accountHolder: "",
+  });
+
   useEffect(() => {
     let isMounted = true;
     merchantApi.getStats().then((data) => {
@@ -52,17 +58,21 @@ export default function MerchantPayoutPage() {
         setAvailableBalance(data.availableBalance);
       }
     });
+
+    merchantApi.getProfile().then((res) => {
+      if (isMounted && res.success && res.merchant) {
+        setBankInfo({
+          bankName: res.merchant.bankName || "BCA",
+          accountNumber: res.merchant.accountNumber || "",
+          accountHolder: res.merchant.accountHolder || res.merchant.storeName || "",
+        });
+      }
+    });
+
     return () => {
       isMounted = false;
     };
   }, []);
-
-  // Bank Info (registered in settings)
-  const bankInfo = {
-    bankName: "BCA",
-    accountNumber: "8271928401",
-    accountHolder: "Artisan Bakery Official",
-  };
 
   const handleQuickAmount = (amount: number) => {
     setErrorText(null);
@@ -175,9 +185,15 @@ export default function MerchantPayoutPage() {
 
         <div className="mt-3 pt-2.5 border-t border-white/15 flex items-center justify-between text-[11px] text-white/80">
           <span>Rekening Tujuan:</span>
-          <strong className="text-white">
-            {bankInfo.bankName} •••• {bankInfo.accountNumber.slice(-4)}
-          </strong>
+          {bankInfo.accountNumber ? (
+            <strong className="text-white">
+              {bankInfo.bankName} •••• {bankInfo.accountNumber.slice(-4)}
+            </strong>
+          ) : (
+            <Link href="/settings" className="text-amber-300 font-bold hover:underline">
+              + Atur Rekening di Pengaturan
+            </Link>
+          )}
         </div>
       </div>
 

@@ -143,8 +143,31 @@ ordersRouter.get("/consumer/active", (c) => {
 
 // GET /orders/merchant/queue
 ordersRouter.get("/merchant/queue", (c) => {
+  const authHeader = c.req.header("authorization") || "";
+  const xUserId = c.req.header("x-user-id") || c.req.query("userId") || c.req.query("merchantId");
+
+  let targetMerchantId = xUserId;
+  if (!targetMerchantId && authHeader.startsWith("Bearer ")) {
+    try {
+      const token = authHeader.slice(7);
+      const parts = token.split(".");
+      if (parts.length >= 2) {
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+        if (payload.sub) {
+          const found = db.merchants.find((m) => m.userId === payload.sub || m.id === payload.sub);
+          if (found) targetMerchantId = found.id;
+        }
+      }
+    } catch {}
+  }
+
+  if (targetMerchantId) {
+    const queue = db.orders.filter((o) => o.merchantId === targetMerchantId);
+    return c.json({ success: true, orders: queue });
+  }
+
   const merchant = db.merchants[0];
-  const queue = db.orders.filter((o) => o.merchantId === merchant.id);
+  const queue = merchant ? db.orders.filter((o) => o.merchantId === merchant.id) : [];
   return c.json({ success: true, orders: queue });
 });
 

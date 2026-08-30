@@ -20,6 +20,8 @@ const registerSchema = z.object({
   phone: z.string().min(10).max(15),
   password: z.string().min(6),
   role: z.enum(["CONSUMER", "MERCHANT"]).default("CONSUMER"),
+  storeName: z.string().optional(),
+  category: z.string().optional(),
 });
 
 const googleAuthSchema = z.object({
@@ -104,6 +106,28 @@ authRouter.post("/register", zValidator("json", registerSchema), async (c) => {
       moneySavedRp: 0,
       updatedAt: new Date().toISOString(),
     };
+  } else if (body.role === "MERCHANT") {
+    db.merchants.push({
+      id: `mer-${newUser.id}`,
+      userId: newUser.id,
+      storeName: sanitizeText(body.storeName || body.name || "Mitra Gerai"),
+      category: sanitizeText(body.category || "Bakery & Pastry"),
+      businessPhone: newUser.phone,
+      address: "",
+      location: { lat: -7.2856, lng: 112.6954 },
+      openTime: "08:00",
+      closeTime: "21:00",
+      bankName: "BCA",
+      accountNumber: "",
+      accountHolder: "",
+      isStoreOpen: false, // Default is closed for newly registered stores!
+      agreedSlaAt: new Date().toISOString(),
+      picName: newUser.name,
+      avgRating: 5.0,
+      totalReviews: 0,
+      isVerified: false,
+      createdAt: new Date().toISOString(),
+    });
   }
 
   const secret = c.env.JWT_ACCESS_SECRET || "foodrescue_jwt_secret";
@@ -181,19 +205,20 @@ authRouter.post("/google", zValidator("json", googleAuthSchema), async (c) => {
         userId: user.id,
         storeName: googleName,
         category: "Bakery & Pastry",
-        address: "Lokasi belum diatur",
+        businessPhone: "",
+        address: "",
         location: { lat: -7.2856, lng: 112.6954 },
         openTime: "08:00",
         closeTime: "21:00",
-        operatingDays: ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"],
         bankName: "BCA",
-        accountNumber: "0000000000",
-        accountHolder: googleName,
-        onboardingStep: 3,
-        isVerified: true,
-        isStoreOpen: true,
+        accountNumber: "",
+        accountHolder: "",
+        isStoreOpen: false,
+        agreedSlaAt: new Date().toISOString(),
+        picName: user.name,
         avgRating: 5.0,
         totalReviews: 0,
+        isVerified: false,
         createdAt: new Date().toISOString(),
       });
     }

@@ -72,11 +72,11 @@ export default function MerchantListingsPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<ListingCategory>("MYSTERY_BOX");
-  const [originalPrice, setOriginalPrice] = useState("50000");
-  const [discountedPrice, setDiscountedPrice] = useState("20000");
-  const [quantity, setQuantity] = useState("5");
-  const [pickupStart, setPickupStart] = useState("19:00");
-  const [pickupEnd, setPickupEnd] = useState("21:30");
+  const [originalPrice, setOriginalPrice] = useState("");
+  const [discountedPrice, setDiscountedPrice] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [pickupStart, setPickupStart] = useState("");
+  const [pickupEnd, setPickupEnd] = useState("");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const handleApplyAiPrice = async (id: string, aiPrice: number) => {
@@ -231,6 +231,11 @@ export default function MerchantListingsPage() {
     setIsModalOpen(false);
     setTitle("");
     setDescription("");
+    setOriginalPrice("");
+    setDiscountedPrice("");
+    setQuantity("");
+    setPickupStart("");
+    setPickupEnd("");
     setFormErrors({});
     showToast("Listing baru berhasil dipublikasikan!");
   };
@@ -604,6 +609,7 @@ export default function MerchantListingsPage() {
                     type="number"
                     value={originalPrice}
                     onChange={(e) => setOriginalPrice(e.target.value)}
+                    placeholder="Contoh: 50000"
                     required
                     className={`h-9 text-xs rounded-xl ${formErrors.originalPrice ? "border-destructive" : ""}`}
                   />
@@ -621,6 +627,7 @@ export default function MerchantListingsPage() {
                     type="number"
                     value={discountedPrice}
                     onChange={(e) => setDiscountedPrice(e.target.value)}
+                    placeholder="Contoh: 20000"
                     required
                     className={`h-9 text-xs rounded-xl ${formErrors.discountedPrice ? "border-destructive" : ""}`}
                   />
@@ -641,6 +648,7 @@ export default function MerchantListingsPage() {
                     type="number"
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
+                    placeholder="5"
                     required
                     min={1}
                     className={`h-9 text-xs rounded-xl ${formErrors.quantity ? "border-destructive" : ""}`}

@@ -1,9 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BarChart3,
   LayoutDashboard,
   QrCode,
   Settings,
@@ -11,38 +11,50 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const NAV_ITEMS = [
-  {
-    label: "Dashboard",
-    href: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Pesanan",
-    href: "/orders",
-    icon: ShoppingBag,
-    badge: "1",
-  },
-  {
-    label: "Listing",
-    href: "/listings",
-    icon: UtensilsCrossed,
-  },
-  {
-    label: "Scan QR",
-    href: "/scanner",
-    icon: QrCode,
-  },
-  {
-    label: "Pengaturan",
-    href: "/settings",
-    icon: Settings,
-  },
-];
+import { merchantApi } from "@/lib/api-client";
 
 export function MerchantMobileNav() {
   const pathname = usePathname();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    merchantApi.getStats().then((data) => {
+      if (data?.pendingOrdersCount) {
+        setPendingCount(data.pendingOrdersCount);
+      } else {
+        setPendingCount(0);
+      }
+    }).catch(() => setPendingCount(0));
+  }, [pathname]);
+
+  const navItems = [
+    {
+      label: "Dashboard",
+      href: "/",
+      icon: LayoutDashboard,
+    },
+    {
+      label: "Pesanan",
+      href: "/orders",
+      icon: ShoppingBag,
+      badge: pendingCount > 0 ? String(pendingCount) : null,
+    },
+    {
+      label: "Listing",
+      href: "/listings",
+      icon: UtensilsCrossed,
+    },
+    {
+      label: "Scan QR",
+      href: "/scanner",
+      icon: QrCode,
+    },
+    {
+      label: "Pengaturan",
+      href: "/settings",
+      icon: Settings,
+    },
+  ];
 
   // Hide nav on auth and onboarding pages
   if (
@@ -60,7 +72,7 @@ export function MerchantMobileNav() {
       className="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-md border-t border-border/80 bg-card/95 backdrop-blur-md pb-[max(0.375rem,env(safe-area-inset-bottom,0.375rem))]"
     >
       <div className="flex h-14 items-center justify-around px-1">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive =
             item.href === "/"

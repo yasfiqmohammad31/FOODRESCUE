@@ -32,31 +32,45 @@ const INITIAL_STATS = {
   pendingOrdersCount: 0,
   storeRating: 5.0,
   totalReviews: 0,
-  isStoreOpen: true,
+  isStoreOpen: false,
 };
 
 export default function MerchantDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState(INITIAL_STATS);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [isStoreOpen, setIsStoreOpen] = useState(true);
+  const [isStoreOpen, setIsStoreOpen] = useState(false);
+  const [storeName, setStoreName] = useState("Mitra Gerai");
   const [isToggleStoreModalOpen, setIsToggleStoreModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Fetch real-time dashboard data
   useEffect(() => {
     let isMounted = true;
+    const userRaw = typeof window !== "undefined" ? localStorage.getItem("fr_merchant") : null;
+    if (userRaw) {
+      try {
+        const user = JSON.parse(userRaw);
+        if (user.storeName) setStoreName(user.storeName);
+        else if (user.name) setStoreName(user.name);
+      } catch {}
+    }
+
     const loadDashboard = async () => {
       setIsLoading(true);
       try {
-        const [statsData, ordersData] = await Promise.all([
+        const [statsData, ordersData, profileData] = await Promise.all([
           merchantApi.getStats(),
           merchantApi.getOrdersQueue(),
+          merchantApi.getProfile(),
         ]);
         if (isMounted) {
           if (statsData) {
             setStats(statsData);
-            setIsStoreOpen(statsData.isStoreOpen ?? true);
+            setIsStoreOpen(statsData.isStoreOpen ?? false);
+          }
+          if (profileData?.merchant?.storeName) {
+            setStoreName(profileData.merchant.storeName);
           }
           if (ordersData && Array.isArray(ordersData)) {
             setOrders(ordersData);
@@ -126,9 +140,9 @@ export default function MerchantDashboardPage() {
             />
             <span
               className="text-[11px] font-bold text-muted-foreground truncate max-w-[150px]"
-              title="Artisan Bakery & Cafe"
+              title={storeName}
             >
-              Artisan Bakery & Cafe
+              {storeName}
             </span>
           </div>
           <h1 className="text-sm sm:text-base font-black text-foreground mt-0.5">

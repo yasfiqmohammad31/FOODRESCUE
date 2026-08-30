@@ -47,17 +47,27 @@ export default function MerchantSettingsPage() {
 
   useEffect(() => {
     let isMounted = true;
+    const userRaw = typeof window !== "undefined" ? localStorage.getItem("fr_merchant") : null;
+    const user = userRaw ? JSON.parse(userRaw) : null;
+
+    if (user?.storeName) {
+      setStoreName(user.storeName);
+    }
+
     merchantApi.getProfile().then((res) => {
       if (isMounted && res.success && res.merchant) {
-        setStoreName(res.merchant.storeName || "");
+        setStoreName(res.merchant.storeName || user?.storeName || "");
         setCategory(res.merchant.category || "Bakery & Pastry");
         setAddress(res.merchant.address || "");
-        setOpenTime(res.merchant.openTime || "07:00");
-        setCloseTime(res.merchant.closeTime || "21:30");
+        setOpenTime(res.merchant.openTime || "08:00");
+        setCloseTime(res.merchant.closeTime || "21:00");
         setBankName(res.merchant.bankName || "BCA");
         setAccountNumber(res.merchant.accountNumber || "");
         setAccountHolder(res.merchant.accountHolder || "");
-        setIsStoreOpen(res.merchant.isStoreOpen ?? true);
+        setIsStoreOpen(res.merchant.isStoreOpen ?? false);
+        if (res.merchant.operatingDays && Array.isArray(res.merchant.operatingDays)) {
+          setOperatingDays(res.merchant.operatingDays);
+        }
       }
     });
     return () => {
@@ -95,11 +105,11 @@ export default function MerchantSettingsPage() {
     }
 
     const cleanAcc = accountNumber.replace(/\D/g, "");
-    if (cleanAcc.length < 8 || cleanAcc.length > 18) {
+    if (cleanAcc && (cleanAcc.length < 8 || cleanAcc.length > 18)) {
       newErrors.accountNumber = "Nomor rekening harus 8-18 digit angka.";
     }
 
-    if (accountHolder.trim().length < 3) {
+    if (accountHolder && accountHolder.trim().length < 3) {
       newErrors.accountHolder = "Nama pemilik rekening minimal 3 karakter.";
     }
 
@@ -107,10 +117,34 @@ export default function MerchantSettingsPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) {
       return;
+    }
+
+    try {
+      await merchantApi.updateProfile({
+        storeName,
+        category,
+        address,
+        openTime,
+        closeTime,
+        operatingDays,
+        bankName,
+        accountNumber,
+        accountHolder,
+        isStoreOpen,
+      });
+
+      const userRaw = localStorage.getItem("fr_merchant");
+      if (userRaw) {
+        const user = JSON.parse(userRaw);
+        user.storeName = storeName;
+        localStorage.setItem("fr_merchant", JSON.stringify(user));
+      }
+    } catch (err) {
+      console.warn("Failed to save settings to API:", err);
     }
 
     setSaved(true);

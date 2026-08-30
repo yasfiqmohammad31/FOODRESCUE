@@ -14,6 +14,7 @@ const step1Schema = z.object({
   address: z.string().min(8),
   openTime: z.string().regex(/^\d{2}:\d{2}$/),
   closeTime: z.string().regex(/^\d{2}:\d{2}$/),
+  operatingDays: z.array(z.string()).optional(),
 });
 
 const step2Schema = z.object({
@@ -27,73 +28,165 @@ const step3Schema = z.object({
   picName: z.string().min(3),
 });
 
-function getOrCreateMerchant(): MerchantProfile {
-  if (!db.merchants[0]) {
-    const defaultMerchant: MerchantProfile = {
-      id: "mer-01",
-      userId: db.users.find((u) => u.role === "MERCHANT")?.id || "usr-mer-001",
-      storeName: "Artisan Bakery & Cafe",
-      category: "Bakery & Pastry",
-      businessPhone: "+6281987654321",
-      address: "Jl. Raya Darmo Permai No. 45, Surabaya",
-      location: { lat: -7.2856, lng: 112.6954 },
-      openTime: "08:00",
-      closeTime: "22:00",
-      bankName: "BCA",
-      accountNumber: "8271928401",
-      accountHolder: "Artisan Bakery Official",
-      isStoreOpen: true,
-      agreedSlaAt: new Date().toISOString(),
-      picName: "Budi Santoso",
-      avgRating: 5.0,
-      totalReviews: 0,
-      isVerified: false,
-      createdAt: new Date().toISOString(),
-    };
-    db.merchants.push(defaultMerchant);
-    return defaultMerchant;
+const updateProfileSchema = z.object({
+  storeName: z.string().min(3).optional(),
+  category: z.string().optional(),
+  address: z.string().optional(),
+  businessPhone: z.string().optional(),
+  openTime: z.string().optional(),
+  closeTime: z.string().optional(),
+  operatingDays: z.array(z.string()).optional(),
+  bankName: z.string().optional(),
+  accountNumber: z.string().optional(),
+  accountHolder: z.string().optional(),
+  isStoreOpen: z.boolean().optional(),
+});
+
+export function getMerchantForContext(c: any): MerchantProfile {
+  const authHeader = c.req.header("authorization") || "";
+  const xUserId = c.req.header("x-user-id") || c.req.query("userId") || c.req.query("merchantId");
+
+  if (xUserId) {
+    const found = db.merchants.find((m) => m.userId === xUserId || m.id === xUserId);
+    if (found) return found;
   }
-  return db.merchants[0];
+
+  if (authHeader.startsWith("Bearer ")) {
+    try {
+      const token = authHeader.slice(7);
+      const parts = token.split(".");
+      if (parts.length >= 2) {
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+        if (payload.sub) {
+          const found = db.merchants.find((m) => m.userId === payload.sub || m.id === payload.sub);
+          if (found) return found;
+
+          // If user exists with role MERCHANT, create clean profile
+          const user = db.users.find((u) => u.id === payload.sub);
+          if (user) {
+            const newM: MerchantProfile = {
+              id: `mer-${user.id}`,
+              userId: user.id,
+              storeName: user.name || "Mitra Gerai",
+              category: "Bakery & Pastry",
+              businessPhone: user.phone || "",
+              address: "",
+              location: { lat: -7.2856, lng: 112.6954 },
+              openTime: "08:00",
+              closeTime: "21:00",
+              bankName: "BCA",
+              accountNumber: "",
+              accountHolder: "",
+              isStoreOpen: false,
+              agreedSlaAt: new Date().toISOString(),
+              picName: user.name || "Pemilik Gerai",
+              avgRating: 5.0,
+              totalReviews: 0,
+              isVerified: false,
+              createdAt: new Date().toISOString(),
+            };
+            db.merchants.push(newM);
+            return newM;
+          }
+        }
+      }
+    } catch {}
+  }
+
+  if (db.merchants.length > 0) {
+    return db.merchants[db.merchants.length - 1];
+  }
+
+  const defaultMerchant: MerchantProfile = {
+    id: "mer-01",
+    userId: "usr-mer-001",
+    storeName: "Artisan Bakery & Cafe",
+    category: "Bakery & Pastry",
+    businessPhone: "+6281987654321",
+    address: "Jl. Raya Darmo Permai No. 45, Surabaya",
+    location: { lat: -7.2856, lng: 112.6954 },
+    openTime: "08:00",
+    closeTime: "22:00",
+    bankName: "BCA",
+    accountNumber: "8271928401",
+    accountHolder: "Artisan Bakery Official",
+    isStoreOpen: true,
+    agreedSlaAt: new Date().toISOString(),
+    picName: "Budi Santoso",
+    avgRating: 5.0,
+    totalReviews: 0,
+    isVerified: true,
+    createdAt: new Date().toISOString(),
+  };
+  db.merchants.push(defaultMerchant);
+  return defaultMerchant;
 }
 
 // GET /merchants/profile
 merchantsRouter.get("/profile", (c) => {
-  const merchant = getOrCreateMerchant();
+  const merchant = getMerchantForContext(c);
   return c.json({ success: true, merchant });
+});
+
+// PATCH /merchants/profile
+merchantsRouter.patch("/profile", zValidator("json", updateProfileSchema), (c) => {
+  const body = c.req.valid("json");
+  const merchant = getMerchantForContext(c);
+
+  if (body.storeName) merchant.storeName = sanitizeText(body.storeName);
+  if (body.category) merchant.category = sanitizeText(body.category);
+  if (body.address !== undefined) merchant.address = sanitizeText(body.address);
+  if (body.businessPhone) merchant.businessPhone = body.businessPhone;
+  if (body.openTime) merchant.openTime = body.openTime;
+  if (body.closeTime) merchant.closeTime = body.closeTime;
+  if (body.bankName) merchant.bankName = body.bankName;
+  if (body.accountNumber !== undefined) merchant.accountNumber = body.accountNumber.replace(/\D/g, "");
+  if (body.accountHolder !== undefined) merchant.accountHolder = sanitizeText(body.accountHolder);
+  if (body.isStoreOpen !== undefined) merchant.isStoreOpen = body.isStoreOpen;
+
+  return c.json({
+    success: true,
+    message: "Pengaturan profil gerai berhasil diperbarui.",
+    merchant,
+  });
 });
 
 // GET /merchants/stats
 merchantsRouter.get("/stats", (c) => {
-  const merchant = getOrCreateMerchant();
+  const merchant = getMerchantForContext(c);
   const merchantOrders = db.orders.filter((o) => o.merchantId === merchant.id);
-  const todayOrders = merchantOrders.filter(
+  const completedOrders = merchantOrders.filter(
     (o) => o.status === "PICKED_UP" || o.status === "READY" || o.status === "CONFIRMED"
   );
 
-  const todayRevenue = todayOrders.reduce((sum, o) => sum + Math.round(o.totalPrice * 0.85), 0);
-  const todayPortionsSaved = todayOrders.reduce((sum, o) => sum + o.quantity, 0);
+  const todayRevenue = completedOrders.reduce((sum, o) => sum + Math.round(o.totalPrice * 0.85), 0);
+  const todayPortionsSaved = completedOrders.reduce((sum, o) => sum + o.quantity, 0);
   const activeListingsCount = db.listings.filter(
     (l) => l.merchantId === merchant.id && l.status === "ACTIVE" && l.quantityRemaining > 0
   ).length;
+
+  const pendingOrders = merchantOrders.filter(
+    (o) => o.status === "CONFIRMED" || o.status === "PREPARING" || o.status === "UNDO_WINDOW"
+  );
 
   return c.json({
     success: true,
     stats: {
       todayRevenue,
       todayPortionsSaved,
-      availableBalance: todayRevenue || 1485000,
+      availableBalance: todayRevenue,
       activeListingsCount,
-      pendingOrdersCount: todayOrders.length,
-      storeRating: merchant.avgRating,
-      totalReviews: merchant.totalReviews,
-      isStoreOpen: merchant.isStoreOpen,
+      pendingOrdersCount: pendingOrders.length,
+      storeRating: merchant.avgRating || 5.0,
+      totalReviews: merchant.totalReviews || 0,
+      isStoreOpen: merchant.isStoreOpen ?? false,
     },
   });
 });
 
 // PATCH /merchants/toggle-status
 merchantsRouter.patch("/toggle-status", (c) => {
-  const merchant = getOrCreateMerchant();
+  const merchant = getMerchantForContext(c);
   merchant.isStoreOpen = !merchant.isStoreOpen;
 
   return c.json({
@@ -112,7 +205,7 @@ merchantsRouter.post("/onboarding/step-1", zValidator("json", step1Schema), (c) 
     return c.json({ success: false, message: "Jam tutup harus lebih akhir dari jam buka." }, 400);
   }
 
-  const merchant = getOrCreateMerchant();
+  const merchant = getMerchantForContext(c);
   merchant.storeName = sanitizeText(body.storeName);
   merchant.category = body.category;
   merchant.businessPhone = body.businessPhone;
@@ -131,7 +224,7 @@ merchantsRouter.post("/onboarding/step-2", zValidator("json", step2Schema), (c) 
     return c.json({ success: false, message: "Nomor rekening harus 8-18 digit angka." }, 400);
   }
 
-  const merchant = getOrCreateMerchant();
+  const merchant = getMerchantForContext(c);
   merchant.bankName = body.bankName;
   merchant.accountNumber = cleanAcc;
   merchant.accountHolder = sanitizeText(body.accountHolder);
@@ -143,7 +236,7 @@ merchantsRouter.post("/onboarding/step-2", zValidator("json", step2Schema), (c) 
 merchantsRouter.post("/onboarding/step-3", zValidator("json", step3Schema), (c) => {
   const body = c.req.valid("json");
 
-  const merchant = getOrCreateMerchant();
+  const merchant = getMerchantForContext(c);
   merchant.agreedSlaAt = new Date().toISOString();
   merchant.picName = sanitizeText(body.picName);
   merchant.isVerified = true;
