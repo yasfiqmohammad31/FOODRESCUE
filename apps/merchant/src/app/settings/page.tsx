@@ -9,6 +9,8 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
+  ExternalLink,
+  LocateFixed,
   LogOut,
   MapPin,
   Power,
@@ -25,13 +27,25 @@ export default function MerchantSettingsPage() {
   const router = useRouter();
   const [isStoreOpen, setIsStoreOpen] = useState(true);
   const [storeName, setStoreName] = useState("");
+  const [categories, setCategories] = useState<string[]>([
+    "Bakery & Pastry",
+    "Cafe & Minuman",
+    "Restoran & Rumah Makan",
+    "Warung & Kuliner Lokal",
+    "Supermarket & Buah Segar",
+    "Hotel & Buffet",
+    "Fast Food & Cemilan",
+  ]);
   const [category, setCategory] = useState("Bakery & Pastry");
   const [address, setAddress] = useState("");
-  const [description, setDescription] = useState("");
+  const [lat, setLat] = useState<number>(-7.2856);
+  const [lng, setLng] = useState<number>(112.6954);
+  const [isLocating, setIsLocating] = useState(false);
+  const [gpsSuccess, setGpsSuccess] = useState<string | null>(null);
 
   // Operational schedule
-  const [openTime, setOpenTime] = useState("07:00");
-  const [closeTime, setCloseTime] = useState("21:30");
+  const [openTime, setOpenTime] = useState("08:00");
+  const [closeTime, setCloseTime] = useState("21:00");
   const [operatingDays, setOperatingDays] = useState<string[]>([
     "Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"
   ]);
@@ -53,12 +67,23 @@ export default function MerchantSettingsPage() {
     if (user?.storeName) {
       setStoreName(user.storeName);
     }
+    if (user?.category) {
+      setCategory(user.category);
+    }
+
+    merchantApi.getCategories().then((cats) => {
+      if (isMounted && cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    });
 
     merchantApi.getProfile().then((res) => {
       if (isMounted && res.success && res.merchant) {
         setStoreName(res.merchant.storeName || user?.storeName || "");
-        setCategory(res.merchant.category || "Bakery & Pastry");
+        setCategory(res.merchant.category || user?.category || "Bakery & Pastry");
         setAddress(res.merchant.address || "");
+        if (res.merchant.location?.lat) setLat(res.merchant.location.lat);
+        if (res.merchant.location?.lng) setLng(res.merchant.location.lng);
         setOpenTime(res.merchant.openTime || "08:00");
         setCloseTime(res.merchant.closeTime || "21:00");
         setBankName(res.merchant.bankName || "BCA");
@@ -74,6 +99,42 @@ export default function MerchantSettingsPage() {
       isMounted = false;
     };
   }, []);
+
+  const handleGetGPS = () => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      setErrors((prev) => ({
+        ...prev,
+        location: "Perangkat atau peramban Anda tidak mendukung GPS Geolocation.",
+      }));
+      return;
+    }
+
+    setIsLocating(true);
+    setGpsSuccess(null);
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.location;
+      return next;
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(Number(pos.coords.latitude.toFixed(6)));
+        setLng(Number(pos.coords.longitude.toFixed(6)));
+        setIsLocating(false);
+        setGpsSuccess(`Titik koordinat berhasil diperbarui (Akurasi: ±${Math.round(pos.coords.accuracy)} meter).`);
+        setTimeout(() => setGpsSuccess(null), 4000);
+      },
+      (err) => {
+        setIsLocating(false);
+        setErrors((prev) => ({
+          ...prev,
+          location: `Gagal membaca GPS: ${err.message}. Anda dapat mengisi angka Latitude & Longitude manual.`,
+        }));
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
 
   const toggleDay = (day: string) => {
     if (operatingDays.includes(day)) {
@@ -142,6 +203,7 @@ export default function MerchantSettingsPage() {
         storeName,
         category,
         address,
+        location: { lat: Number(lat), lng: Number(lng) },
         openTime,
         closeTime,
         operatingDays,
@@ -182,7 +244,7 @@ export default function MerchantSettingsPage() {
           Pengaturan Gerai
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Kelola profil gerai, status operasional, dan rekening pencairan dana.
+          Kelola profil gerai, kategori usaha, titik lokasi Google Maps, dan rekening pencairan.
         </p>
       </div>
 
@@ -239,7 +301,7 @@ export default function MerchantSettingsPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between pb-1.5 border-b border-border/70">
               <h2 className="text-xs font-bold uppercase tracking-wider text-primary">
-                1. Informasi Gerai
+                1. Informasi Gerai & Titik Peta
               </h2>
               <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded">
                 Terverifikasi
@@ -272,22 +334,23 @@ export default function MerchantSettingsPage() {
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full h-9 rounded-xl border border-input bg-card px-3 text-xs font-semibold text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
               >
-                <option value="Bakery & Pastry">Bakery & Pastry</option>
-                <option value="Cafe & Kopi">Cafe & Kopi</option>
-                <option value="Restoran / Rumah Makan">Restoran / Rumah Makan</option>
-                <option value="Warung & Kuliner Lokal">Warung & Kuliner Lokal</option>
-                <option value="Supermarket / Buah">Supermarket / Buah</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                Alamat Fisik Titik Ambil (Pickup Point)
+                Alamat Fisik Pengambilan
               </label>
               <Input
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 required
+                placeholder="Jl. Raya Darmo No. 45, Surabaya"
                 className={`h-9 text-xs rounded-xl ${errors.address ? "border-destructive" : ""}`}
               />
               {errors.address && (
@@ -297,32 +360,95 @@ export default function MerchantSettingsPage() {
               )}
             </div>
 
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                Deskripsi Toko
-              </label>
-              <Input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="h-9 text-xs rounded-xl"
-              />
+            {/* Titik Lokasi Peta / GPS Restoran */}
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-primary text-xs font-bold">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span>Titik GPS & Navigasi Google Maps</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGetGPS}
+                  disabled={isLocating}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-[11px] font-bold shadow-2xs hover:bg-primary/90 transition disabled:opacity-50"
+                >
+                  <LocateFixed className={`h-3.5 w-3.5 ${isLocating ? "animate-spin" : ""}`} />
+                  <span>{isLocating ? "Mencari GPS..." : "Perbarui via GPS"}</span>
+                </button>
+              </div>
+
+              {gpsSuccess && (
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-100/80 p-1.5 rounded-lg">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  <span>{gpsSuccess}</span>
+                </div>
+              )}
+
+              {errors.location && (
+                <span className="text-[10px] text-destructive font-semibold block">
+                  {errors.location}
+                </span>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
+                    Latitude
+                  </label>
+                  <Input
+                    type="number"
+                    step="any"
+                    value={lat}
+                    onChange={(e) => setLat(parseFloat(e.target.value) || 0)}
+                    required
+                    className="h-8 text-xs font-mono bg-card"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
+                    Longitude
+                  </label>
+                  <Input
+                    type="number"
+                    step="any"
+                    value={lng}
+                    onChange={(e) => setLng(parseFloat(e.target.value) || 0)}
+                    required
+                    className="h-8 text-xs font-mono bg-card"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-0.5">
+                <span className="text-[10px] text-muted-foreground">
+                  Digunakan untuk panduan rute Google Maps konsumen.
+                </span>
+                <a
+                  href={`https://maps.google.com/?q=${lat},${lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-primary hover:underline"
+                >
+                  <span>Cek di Google Maps</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-border/70" />
-
           {/* Section 2: Operational Schedule */}
           <div className="space-y-3">
-            <div className="pb-1.5 border-b border-border/70">
+            <div className="flex items-center justify-between pb-1.5 border-b border-border/70">
               <h2 className="text-xs font-bold uppercase tracking-wider text-primary">
                 2. Jam & Hari Operasional
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                  Jam Buka
+                  Jam Buka Gerai
                 </label>
                 <Input
                   type="time"
@@ -335,7 +461,7 @@ export default function MerchantSettingsPage() {
 
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                  Jam Tutup
+                  Jam Tutup Gerai
                 </label>
                 <Input
                   type="time"
@@ -346,6 +472,7 @@ export default function MerchantSettingsPage() {
                 />
               </div>
             </div>
+
             {errors.operationalHours && (
               <span className="text-[10px] text-destructive font-semibold block">
                 {errors.operationalHours}
@@ -356,7 +483,7 @@ export default function MerchantSettingsPage() {
               <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                 Hari Operasional
               </label>
-              <div className="flex gap-1.5 flex-wrap">
+              <div className="flex flex-wrap gap-1.5">
                 {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((day) => {
                   const isSelected = operatingDays.includes(day);
                   return (
@@ -364,10 +491,10 @@ export default function MerchantSettingsPage() {
                       key={day}
                       type="button"
                       onClick={() => toggleDay(day)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                      className={`flex-1 min-w-[38px] py-1.5 text-center text-xs font-bold rounded-lg border transition ${
                         isSelected
-                          ? "bg-primary text-white shadow-2xs"
-                          : "bg-[#F3EFE6] text-muted-foreground hover:text-foreground"
+                          ? "bg-primary text-primary-foreground border-primary shadow-2xs"
+                          : "bg-background text-muted-foreground border-border hover:bg-muted"
                       }`}
                     >
                       {day}
@@ -383,43 +510,42 @@ export default function MerchantSettingsPage() {
             </div>
           </div>
 
-          <div className="border-t border-border/70" />
-
-          {/* Section 3: Bank Disbursement (Alternative Full-Width Stacked Layout with Zero Overflow) */}
+          {/* Section 3: Bank Disbursement */}
           <div className="space-y-3">
-            <div className="pb-1.5 border-b border-border/70">
+            <div className="flex items-center justify-between pb-1.5 border-b border-border/70">
               <h2 className="text-xs font-bold uppercase tracking-wider text-primary">
-                3. Rekening Penyaluran Dana Penjualan
+                3. Rekening Penyaluran Dana
               </h2>
             </div>
 
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                Bank Tujuan Pencairan
+                Bank Penyaluran
               </label>
               <select
                 value={bankName}
                 onChange={(e) => setBankName(e.target.value)}
                 className="w-full h-9 rounded-xl border border-input bg-card px-3 text-xs font-semibold text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
               >
-                <option value="BCA">Bank Central Asia (BCA)</option>
+                <option value="BCA">BCA (Bank Central Asia)</option>
                 <option value="Mandiri">Bank Mandiri</option>
-                <option value="BRI">Bank Rakyat Indonesia (BRI)</option>
-                <option value="BNI">Bank Negara Indonesia (BNI)</option>
+                <option value="BRI">Bank BRI</option>
+                <option value="BNI">Bank BNI</option>
                 <option value="BSI">Bank Syariah Indonesia (BSI)</option>
               </select>
             </div>
 
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                Nomor Rekening Bank
+                Nomor Rekening
               </label>
               <Input
                 value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => setAccountNumber(e.target.value)}
                 placeholder="Contoh: 8271928401"
-                required
-                className={`h-9 text-xs rounded-xl font-mono ${errors.accountNumber ? "border-destructive" : ""}`}
+                className={`h-9 text-xs rounded-xl font-mono ${
+                  errors.accountNumber ? "border-destructive" : ""
+                }`}
               />
               {errors.accountNumber && (
                 <span className="text-[10px] text-destructive font-semibold mt-1 block">
@@ -430,14 +556,15 @@ export default function MerchantSettingsPage() {
 
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                Nama Pemilik Rekening (Sesuai Buku Tabungan)
+                Nama Pemilik Rekening
               </label>
               <Input
                 value={accountHolder}
                 onChange={(e) => setAccountHolder(e.target.value)}
-                placeholder="Nama lengkap pemilik rekening"
-                required
-                className={`h-9 text-xs rounded-xl ${errors.accountHolder ? "border-destructive" : ""}`}
+                placeholder="Sesuai buku tabungan"
+                className={`h-9 text-xs rounded-xl ${
+                  errors.accountHolder ? "border-destructive" : ""
+                }`}
               />
               {errors.accountHolder && (
                 <span className="text-[10px] text-destructive font-semibold mt-1 block">
@@ -447,39 +574,25 @@ export default function MerchantSettingsPage() {
             </div>
           </div>
 
-          {/* Form Bottom Bar */}
-          <div className="border-t border-border/70 pt-2 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                localStorage.removeItem("fr_merchant_token");
-                localStorage.removeItem("fr_merchant");
-                router.replace("/login");
-              }}
-              className="flex items-center gap-1.5 text-xs font-bold text-destructive hover:underline cursor-pointer"
+          <div className="pt-2">
+            <Button
+              type="submit"
+              className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-black text-xs shadow-sm hover:bg-primary/90 gap-1.5"
             >
-              <LogOut className="h-3.5 w-3.5" />
-              <span>Keluar dari Akun</span>
-            </button>
-
-            <div className="flex items-center gap-2">
-              {saved && (
-                <span className="flex items-center gap-1 text-xs font-bold text-primary animate-in fade-in">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Pengaturan Tersimpan!
-                </span>
-              )}
-              <Button
-                type="submit"
-                className="h-9 px-5 text-xs font-black bg-primary text-primary-foreground rounded-xl gap-1.5 shadow-xs hover:bg-primary/90"
-              >
-                <Save className="h-3.5 w-3.5" />
-                <span>Simpan Perubahan</span>
-              </Button>
-            </div>
+              <Save className="h-4 w-4" />
+              <span>Simpan Pengaturan Gerai</span>
+            </Button>
           </div>
         </form>
       </Card>
+
+      {/* Success Notification Toast */}
+      {saved && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-[#1C1917] text-white border border-white/20 px-4 py-2 text-xs font-bold shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+          <span>Pengaturan gerai berhasil disimpan!</span>
+        </div>
+      )}
     </div>
   );
 }

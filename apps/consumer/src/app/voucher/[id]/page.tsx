@@ -294,13 +294,17 @@ export default function VoucherPage({ params }: VoucherPageProps) {
 
           <div className="mt-3 pt-3 border-t border-border flex gap-2">
             <a
-              href={`https://maps.google.com/?q=${encodeURIComponent(order.merchant.address)}`}
+              href={
+                order.merchant.location?.lat && order.merchant.location?.lng
+                  ? `https://www.google.com/maps/dir/?api=1&destination=${order.merchant.location.lat},${order.merchant.location.lng}`
+                  : `https://maps.google.com/?q=${encodeURIComponent(order.merchant.address)}`
+              }
               target="_blank"
               rel="noreferrer"
               className="flex-1 inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-2xs hover:bg-primary/90 transition"
             >
               <MapPin className="h-4 w-4" />
-              <span>Buka Google Maps</span>
+              <span>Petunjuk Arah Google Maps</span>
               <ExternalLink className="h-3 w-3 opacity-80" />
             </a>
           </div>

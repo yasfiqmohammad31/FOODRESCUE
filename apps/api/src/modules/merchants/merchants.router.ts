@@ -5,6 +5,16 @@ import { db } from "../../db/mock-db";
 import { sanitizeText } from "../../utils/security";
 import type { Env, MerchantProfile } from "../../types";
 
+export const MERCHANT_CATEGORIES = [
+  "Bakery & Pastry",
+  "Cafe & Minuman",
+  "Restoran & Rumah Makan",
+  "Warung & Kuliner Lokal",
+  "Supermarket & Buah Segar",
+  "Hotel & Buffet",
+  "Fast Food & Cemilan",
+] as const;
+
 export const merchantsRouter = new Hono<{ Bindings: Env }>();
 
 const step1Schema = z.object({
@@ -12,6 +22,12 @@ const step1Schema = z.object({
   category: z.string().min(2),
   businessPhone: z.string().min(10).max(15),
   address: z.string().min(8),
+  location: z
+    .object({
+      lat: z.number(),
+      lng: z.number(),
+    })
+    .optional(),
   openTime: z.string().regex(/^\d{2}:\d{2}$/),
   closeTime: z.string().regex(/^\d{2}:\d{2}$/),
   operatingDays: z.array(z.string()).optional(),
@@ -32,6 +48,12 @@ const updateProfileSchema = z.object({
   storeName: z.string().min(3).optional(),
   category: z.string().optional(),
   address: z.string().optional(),
+  location: z
+    .object({
+      lat: z.number(),
+      lng: z.number(),
+    })
+    .optional(),
   businessPhone: z.string().optional(),
   openTime: z.string().optional(),
   closeTime: z.string().optional(),
@@ -40,6 +62,14 @@ const updateProfileSchema = z.object({
   accountNumber: z.string().optional(),
   accountHolder: z.string().optional(),
   isStoreOpen: z.boolean().optional(),
+});
+
+// GET /merchants/categories
+merchantsRouter.get("/categories", (c) => {
+  return c.json({
+    success: true,
+    categories: MERCHANT_CATEGORIES,
+  });
 });
 
 export function getMerchantForContext(c: any): MerchantProfile {
@@ -157,6 +187,12 @@ merchantsRouter.patch("/profile", zValidator("json", updateProfileSchema), (c) =
   if (body.storeName) merchant.storeName = sanitizeText(body.storeName);
   if (body.category) merchant.category = sanitizeText(body.category);
   if (body.address !== undefined) merchant.address = sanitizeText(body.address);
+  if (body.location && typeof body.location.lat === "number" && typeof body.location.lng === "number") {
+    merchant.location = {
+      lat: body.location.lat,
+      lng: body.location.lng,
+    };
+  }
   if (body.businessPhone) merchant.businessPhone = body.businessPhone;
   if (body.openTime) merchant.openTime = body.openTime;
   if (body.closeTime) merchant.closeTime = body.closeTime;
@@ -165,6 +201,15 @@ merchantsRouter.patch("/profile", zValidator("json", updateProfileSchema), (c) =
   if (body.accountNumber !== undefined) merchant.accountNumber = body.accountNumber.replace(/\D/g, "");
   if (body.accountHolder !== undefined) merchant.accountHolder = sanitizeText(body.accountHolder);
   if (body.isStoreOpen !== undefined) merchant.isStoreOpen = body.isStoreOpen;
+
+  // Propagate updated merchant info (storeName, address, location) to existing listings
+  db.listings.forEach((l) => {
+    if (l.merchantId === merchant.id || l.merchantId === merchant.userId) {
+      l.merchant.storeName = merchant.storeName;
+      l.merchant.address = merchant.address;
+      l.merchant.location = { ...merchant.location };
+    }
+  });
 
   return c.json({
     success: true,
@@ -257,11 +302,17 @@ merchantsRouter.post("/onboarding/step-1", zValidator("json", step1Schema), (c) 
   merchant.category = body.category;
   merchant.businessPhone = body.businessPhone;
   merchant.address = sanitizeText(body.address);
+  if (body.location && typeof body.location.lat === "number" && typeof body.location.lng === "number") {
+    merchant.location = {
+      lat: body.location.lat,
+      lng: body.location.lng,
+    };
+  }
   merchant.openTime = body.openTime;
   merchant.closeTime = body.closeTime;
   if (body.operatingDays) merchant.operatingDays = body.operatingDays;
 
-  return c.json({ success: true, message: "Identitas gerai tersimpan." });
+  return c.json({ success: true, message: "Identitas gerai dan titik lokasi tersimpan." });
 });
 
 // POST /merchants/onboarding/step-2

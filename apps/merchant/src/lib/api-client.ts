@@ -69,7 +69,36 @@ export const merchantApi = {
     return fetchMerchantApi("/api/merchants/profile");
   },
 
-  async updateProfile(data: any) {
+  async getCategories(): Promise<string[]> {
+    const res = await fetchMerchantApi<{ success: boolean; categories: string[] }>("/api/merchants/categories");
+    if (res.success && Array.isArray(res.categories)) {
+      return res.categories;
+    }
+    return [
+      "Bakery & Pastry",
+      "Cafe & Minuman",
+      "Restoran & Rumah Makan",
+      "Warung & Kuliner Lokal",
+      "Supermarket & Buah Segar",
+      "Hotel & Buffet",
+      "Fast Food & Cemilan",
+    ];
+  },
+
+  async updateProfile(data: {
+    storeName?: string;
+    category?: string;
+    address?: string;
+    location?: { lat: number; lng: number };
+    businessPhone?: string;
+    openTime?: string;
+    closeTime?: string;
+    operatingDays?: string[];
+    bankName?: string;
+    accountNumber?: string;
+    accountHolder?: string;
+    isStoreOpen?: boolean;
+  }) {
     return fetchMerchantApi("/api/merchants/profile", {
       method: "PATCH",
       body: JSON.stringify(data),
@@ -82,8 +111,10 @@ export const merchantApi = {
     category: string;
     businessPhone: string;
     address: string;
+    location?: { lat: number; lng: number };
     openTime: string;
     closeTime: string;
+    operatingDays?: string[];
   }) {
     return fetchMerchantApi("/api/merchants/onboarding/step-1", {
       method: "POST",

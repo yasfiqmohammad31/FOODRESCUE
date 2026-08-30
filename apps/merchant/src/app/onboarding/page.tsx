@@ -10,9 +10,12 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
+  ExternalLink,
   FileCheck,
   FileText,
+  LocateFixed,
   MapPin,
+  Navigation,
   Phone,
   Scale,
   ShieldAlert,
@@ -30,9 +33,23 @@ export default function MerchantOnboardingPage() {
 
   // Step 1: Profil & Lokasi Gerai
   const [storeName, setStoreName] = useState("");
+  const [categories, setCategories] = useState<string[]>([
+    "Bakery & Pastry",
+    "Cafe & Minuman",
+    "Restoran & Rumah Makan",
+    "Warung & Kuliner Lokal",
+    "Supermarket & Buah Segar",
+    "Hotel & Buffet",
+    "Fast Food & Cemilan",
+  ]);
   const [category, setCategory] = useState("Bakery & Pastry");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [lat, setLat] = useState<number>(-7.2856);
+  const [lng, setLng] = useState<number>(112.6954);
+  const [isLocating, setIsLocating] = useState(false);
+  const [gpsSuccess, setGpsSuccess] = useState<string | null>(null);
+
   const [openTime, setOpenTime] = useState("08:00");
   const [closeTime, setCloseTime] = useState("21:00");
   const [operatingDays, setOperatingDays] = useState<string[]>([
@@ -52,8 +69,15 @@ export default function MerchantOnboardingPage() {
   // Validation state
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Prefill from registration data
+  // Prefill from backend & registration data
   useEffect(() => {
+    let isMounted = true;
+    merchantApi.getCategories().then((cats) => {
+      if (isMounted && cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    });
+
     if (typeof window !== "undefined") {
       const userRaw = localStorage.getItem("fr_merchant");
       if (userRaw) {
@@ -62,10 +86,51 @@ export default function MerchantOnboardingPage() {
           if (user.storeName) setStoreName(user.storeName);
           if (user.name) setPicName(user.name);
           if (user.phone) setPhone(user.phone);
+          if (user.category) setCategory(user.category);
         } catch {}
       }
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  const handleGetGPS = () => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      setErrors((prev) => ({
+        ...prev,
+        location: "Perangkat atau peramban Anda tidak mendukung GPS Geolocation.",
+      }));
+      return;
+    }
+
+    setIsLocating(true);
+    setGpsSuccess(null);
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.location;
+      return next;
+    });
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(Number(pos.coords.latitude.toFixed(6)));
+        setLng(Number(pos.coords.longitude.toFixed(6)));
+        setIsLocating(false);
+        setGpsSuccess(`Titik koordinat berhasil dideteksi (Akurasi: ±${Math.round(pos.coords.accuracy)} meter).`);
+        setTimeout(() => setGpsSuccess(null), 4000);
+      },
+      (err) => {
+        setIsLocating(false);
+        setErrors((prev) => ({
+          ...prev,
+          location: `Gagal membaca GPS: ${err.message}. Anda dapat mengisi angka Latitude & Longitude manual.`,
+        }));
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
 
   const toggleDay = (day: string) => {
     if (operatingDays.includes(day)) {
@@ -106,9 +171,20 @@ export default function MerchantOnboardingPage() {
           category,
           businessPhone: cleanPhone,
           address,
+          location: { lat: Number(lat), lng: Number(lng) },
           openTime,
           closeTime,
+          operatingDays,
         });
+
+        // Update local storage
+        const userRaw = localStorage.getItem("fr_merchant");
+        if (userRaw) {
+          const user = JSON.parse(userRaw);
+          user.storeName = storeName;
+          user.category = category;
+          localStorage.setItem("fr_merchant", JSON.stringify(user));
+        }
       } catch (err) {
         console.warn("Step 1 sync fallback:", err);
       }
@@ -211,7 +287,7 @@ export default function MerchantOnboardingPage() {
           <div>
             <h1 className="text-base font-black text-foreground">1. Identitas & Titik Ambil Fisik</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Konsumen akan mengambil pesanan surplus langsung ke alamat gerai ini.
+              Konsumen akan mengambil pesanan surplus langsung ke alamat dan titik GPS gerai ini.
             </p>
           </div>
         )}
@@ -240,7 +316,7 @@ export default function MerchantOnboardingPage() {
       {/* ========================================================================= */}
       {currentStep === 1 && (
         <form onSubmit={handleNextStep1} className="my-3 flex flex-col gap-3">
-          <Card className="p-3.5 bg-card border-border shadow-2xs rounded-xl space-y-2.5">
+          <Card className="p-3.5 bg-card border-border shadow-2xs rounded-xl space-y-3">
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
                 Nama Gerai / Usaha
@@ -269,11 +345,11 @@ export default function MerchantOnboardingPage() {
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full h-9 rounded-xl border border-input bg-card px-2 text-xs font-semibold text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
                 >
-                  <option value="Bakery & Pastry">Bakery & Pastry</option>
-                  <option value="Cafe & Kopi">Cafe & Kopi</option>
-                  <option value="Restoran / Rumah Makan">Restoran / Rumah Makan</option>
-                  <option value="Warung & Kuliner Lokal">Warung & Kuliner Lokal</option>
-                  <option value="Supermarket / Buah">Supermarket / Buah</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -313,6 +389,82 @@ export default function MerchantOnboardingPage() {
                   {errors.address}
                 </span>
               )}
+            </div>
+
+            {/* Titik Lokasi Peta / GPS Restoran */}
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-primary text-xs font-bold">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span>Titik GPS & Navigasi Google Maps</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGetGPS}
+                  disabled={isLocating}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-[11px] font-bold shadow-2xs hover:bg-primary/90 transition disabled:opacity-50"
+                >
+                  <LocateFixed className={`h-3.5 w-3.5 ${isLocating ? "animate-spin" : ""}`} />
+                  <span>{isLocating ? "Mencari GPS..." : "Deteksi GPS Saya"}</span>
+                </button>
+              </div>
+
+              {gpsSuccess && (
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-100/80 p-1.5 rounded-lg">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  <span>{gpsSuccess}</span>
+                </div>
+              )}
+
+              {errors.location && (
+                <span className="text-[10px] text-destructive font-semibold block">
+                  {errors.location}
+                </span>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
+                    Latitude
+                  </label>
+                  <Input
+                    type="number"
+                    step="any"
+                    value={lat}
+                    onChange={(e) => setLat(parseFloat(e.target.value) || 0)}
+                    required
+                    className="h-8 text-xs font-mono bg-card"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
+                    Longitude
+                  </label>
+                  <Input
+                    type="number"
+                    step="any"
+                    value={lng}
+                    onChange={(e) => setLng(parseFloat(e.target.value) || 0)}
+                    required
+                    className="h-8 text-xs font-mono bg-card"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-0.5">
+                <span className="text-[10px] text-muted-foreground">
+                  Digunakan untuk rute Google Maps konsumen.
+                </span>
+                <a
+                  href={`https://maps.google.com/?q=${lat},${lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-primary hover:underline"
+                >
+                  <span>Cek di Google Maps</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -379,31 +531,31 @@ export default function MerchantOnboardingPage() {
             type="submit"
             className="w-full h-10 rounded-xl bg-primary text-primary-foreground font-black text-xs shadow-sm hover:bg-primary/90 gap-1.5"
           >
-            <span>Lanjut: Rekening Penyaluran</span>
-            <ArrowRight className="h-3.5 w-3.5" />
+            <span>Lanjut ke Rekening Penyaluran</span>
+            <ArrowRight className="h-4 w-4" />
           </Button>
         </form>
       )}
 
       {/* ========================================================================= */}
-      {/* STEP 2: Rekening Penyaluran Dana (Non-Overflowing Vertical Stack) */}
+      {/* STEP 2: Rekening Penyaluran Dana */}
       {/* ========================================================================= */}
       {currentStep === 2 && (
         <form onSubmit={handleNextStep2} className="my-3 flex flex-col gap-3">
-          <Card className="p-3.5 bg-card border-border shadow-2xs rounded-xl space-y-3">
+          <Card className="p-3.5 bg-card border-border shadow-2xs rounded-xl space-y-2.5">
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                Bank Tujuan Pencairan
+                Bank Tujuan Penyaluran
               </label>
               <select
                 value={bankName}
                 onChange={(e) => setBankName(e.target.value)}
-                className="w-full h-9 rounded-xl border border-input bg-card px-3 text-xs font-semibold text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
+                className="w-full h-9 rounded-xl border border-input bg-card px-2 text-xs font-semibold text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
               >
-                <option value="BCA">Bank Central Asia (BCA)</option>
+                <option value="BCA">Bank BCA (Bank Central Asia)</option>
                 <option value="Mandiri">Bank Mandiri</option>
-                <option value="BRI">Bank Rakyat Indonesia (BRI)</option>
-                <option value="BNI">Bank Negara Indonesia (BNI)</option>
+                <option value="BRI">Bank BRI (Bank Rakyat Indonesia)</option>
+                <option value="BNI">Bank BNI (Bank Negara Indonesia)</option>
                 <option value="BSI">Bank Syariah Indonesia (BSI)</option>
               </select>
             </div>
@@ -415,10 +567,12 @@ export default function MerchantOnboardingPage() {
               <Input
                 type="text"
                 value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => setAccountNumber(e.target.value)}
                 placeholder="Contoh: 8271928401"
                 required
-                className={`h-9 text-xs rounded-xl font-mono ${errors.accountNumber ? "border-destructive" : ""}`}
+                className={`h-9 text-xs rounded-xl font-mono ${
+                  errors.accountNumber ? "border-destructive" : ""
+                }`}
               />
               {errors.accountNumber && (
                 <span className="text-[10px] text-destructive font-semibold mt-1 block">
@@ -429,15 +583,16 @@ export default function MerchantOnboardingPage() {
 
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                Nama Pemilik Rekening
+                Nama Pemilik Rekening Sesuai Buku Tabungan
               </label>
               <Input
-                type="text"
                 value={accountHolder}
                 onChange={(e) => setAccountHolder(e.target.value)}
-                placeholder="Sesuai nama pada buku tabungan"
+                placeholder="Contoh: Budi Santoso / PT Artisan Kuliner"
                 required
-                className={`h-9 text-xs rounded-xl ${errors.accountHolder ? "border-destructive" : ""}`}
+                className={`h-9 text-xs rounded-xl ${
+                  errors.accountHolder ? "border-destructive" : ""
+                }`}
               />
               {errors.accountHolder && (
                 <span className="text-[10px] text-destructive font-semibold mt-1 block">
@@ -445,27 +600,31 @@ export default function MerchantOnboardingPage() {
                 </span>
               )}
             </div>
+
+            <div className="rounded-xl bg-muted/60 p-2.5 text-[11px] text-muted-foreground flex items-start gap-2">
+              <CreditCard className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <span>
+                Penyaluran dana hasil penjualan surplus akan dicairkan otomatis sesuai permintaan penarikan mitra.
+              </span>
+            </div>
           </Card>
 
           <div className="flex gap-2">
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setErrors({});
-                setCurrentStep(1);
-              }}
+              onClick={() => setCurrentStep(1)}
               className="flex-1 h-10 rounded-xl text-xs font-bold gap-1"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
+              <ArrowLeft className="h-4 w-4" />
               <span>Kembali</span>
             </Button>
             <Button
               type="submit"
-              className="flex-2 h-10 rounded-xl bg-primary text-primary-foreground font-black text-xs shadow-sm hover:bg-primary/90 gap-1.5"
+              className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground font-black text-xs shadow-sm hover:bg-primary/90 gap-1"
             >
-              <span>Lanjut: Perjanjian Kerjasama</span>
-              <ArrowRight className="h-3.5 w-3.5" />
+              <span>Lanjut ke SLA</span>
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </form>
@@ -476,70 +635,58 @@ export default function MerchantOnboardingPage() {
       {/* ========================================================================= */}
       {currentStep === 3 && (
         <form onSubmit={handleFinalSubmit} className="my-3 flex flex-col gap-3">
-          <Card className="p-3.5 bg-card border-border shadow-2xs rounded-xl space-y-3">
-            <div className="flex items-center gap-2 pb-2 border-b border-border text-primary">
-              <Scale className="h-4 w-4" />
-              <h2 className="text-xs font-black text-foreground">Ringkasan SLA & Kerjasama Mitra</h2>
+          <Card className="p-3.5 bg-card border-border shadow-2xs rounded-xl space-y-2.5">
+            <div className="space-y-2 max-h-56 overflow-y-auto rounded-xl bg-muted/40 p-3 border border-border/80 text-[11px] leading-relaxed text-foreground/90">
+              <h3 className="font-bold text-xs text-primary">Service Level Agreement (SLA) Mitra FOODRESCUE</h3>
+              <p>
+                <strong>1. Bagi Hasil Bersih 85/15:</strong> Mitra berhak menerima 85% dari nilai transaksi bruto setiap makanan surplus yang berhasil diselamatkan dan diambil konsumen.
+              </p>
+              <p>
+                <strong>2. Standar Mutu & Higienitas:</strong> Seluruh makanan yang dijual via FOODRESCUE adalah makanan surplus layak konsumsi dari batch produksi harian, bukan sisa piring konsumen.
+              </p>
+              <p>
+                <strong>3. Waktu Pengambilan:</strong> Mitra wajib menyiapkan paket makanan sesuai batas waktu pengambilan yang tertera pada aplikasi.
+              </p>
+              <p>
+                <strong>4. Kebijakan Instant Undo:</strong> Konsumen memiliki hak pembatalan transaksi 60 detik pasca-pembayaran. Notifikasi pesanan baru akan dikirimkan ke gerai setelah periode 60 detik terlewati.
+              </p>
             </div>
 
-            <div className="space-y-2 text-[11px] text-muted-foreground leading-relaxed max-h-48 overflow-y-auto pr-1">
-              <div className="p-2 rounded-lg bg-[#F3EFE6] border border-border space-y-1 text-foreground">
-                <strong className="text-primary block">1. Pembagian Hasil Transaksi (85/15)</strong>
-                <p className="text-[10px] text-muted-foreground">
-                  Mitra merchant menerima 85% bersih dari setiap nilai transaksi surplus yang berhasil diambil. Fee platform 15% digunakan untuk biaya payment gateway, pemeliharaan server, dan layanan konsumen.
-                </p>
-              </div>
-
-              <div className="p-2 rounded-lg bg-[#F3EFE6] border border-border space-y-1 text-foreground">
-                <strong className="text-primary block">2. Pakta Kualitas & Keamanan Pangan</strong>
-                <p className="text-[10px] text-muted-foreground">
-                  Mitra menjamin seluruh makanan surplus yang didaftarkan dalam kondisi bersih, layak konsumsi, belum basi/kedaluwarsa, dan disimpan sesuai standar sanitasi. Makanan yang menyebabkan keluhan mutu kritis dapat berakibat penonaktifan gerai.
-                </p>
-              </div>
-
-              <div className="p-2 rounded-lg bg-[#F3EFE6] border border-border space-y-1 text-foreground">
-                <strong className="text-primary block">3. Aturan No-Show & Pembatalan 60s</strong>
-                <p className="text-[10px] text-muted-foreground">
-                  Konsumen berhak membatalkan dalam jeda 60 detik pasca bayar. Setelah 60 detik, pesanan bersifat final. Jika konsumen tidak hadir (*no-show*) hingga pickup window usai, dana penjualan tetap menjadi hak merchant.
-                </p>
-              </div>
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                Nama Penanggung Jawab (PIC Gerai)
+              </label>
+              <Input
+                value={picName}
+                onChange={(e) => setPicName(e.target.value)}
+                placeholder="Nama lengkap PIC mitra"
+                required
+                className={`h-9 text-xs rounded-xl ${errors.picName ? "border-destructive" : ""}`}
+              />
+              {errors.picName && (
+                <span className="text-[10px] text-destructive font-semibold mt-1 block">
+                  {errors.picName}
+                </span>
+              )}
             </div>
 
-            <div className="pt-2 border-t border-border space-y-2">
-              <label className="flex items-start gap-2 text-xs font-medium text-foreground cursor-pointer">
+            <div className="pt-1">
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={agreedTerms}
                   onChange={(e) => setAgreedTerms(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded text-primary focus:ring-primary accent-[#2D6A4F]"
+                  className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary"
                 />
-                <span className="text-[11px] leading-snug">
-                  Saya telah membaca dan menyetujui seluruh <strong>Ketentuan Kerjasama Mitra</strong> dan <strong>SLA Mutu Pangan</strong>.
+                <span className="text-[11px] font-bold text-foreground leading-snug">
+                  Saya mewakili gerai telah membaca, memahami, dan menyetujui seluruh ketentuan kerjasama serta SLA operasional FOODRESCUE.
                 </span>
               </label>
               {errors.agreedTerms && (
-                <span className="text-[10px] text-destructive font-semibold block">
+                <span className="text-[10px] text-destructive font-semibold mt-1 block">
                   {errors.agreedTerms}
                 </span>
               )}
-
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                  Nama Penanggung Jawab Gerai (Tanda Tangan Digital)
-                </label>
-                <Input
-                  value={picName}
-                  onChange={(e) => setPicName(e.target.value)}
-                  placeholder="Contoh: Budi Santoso (Pemilik / Manajer)"
-                  required
-                  className={`h-9 text-xs rounded-xl ${errors.picName ? "border-destructive" : ""}`}
-                />
-                {errors.picName && (
-                  <span className="text-[10px] text-destructive font-semibold mt-1 block">
-                    {errors.picName}
-                  </span>
-                )}
-              </div>
             </div>
           </Card>
 
@@ -547,33 +694,23 @@ export default function MerchantOnboardingPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setErrors({});
-                setCurrentStep(2);
-              }}
+              onClick={() => setCurrentStep(2)}
               className="flex-1 h-10 rounded-xl text-xs font-bold gap-1"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
+              <ArrowLeft className="h-4 w-4" />
               <span>Kembali</span>
             </Button>
             <Button
               type="submit"
               loading={isLoading}
-              className="flex-2 h-10 rounded-xl bg-primary text-primary-foreground font-black text-xs shadow-sm hover:bg-primary/90 gap-1.5"
+              className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground font-black text-xs shadow-sm hover:bg-primary/90 gap-1"
             >
-              <FileCheck className="h-3.5 w-3.5" />
-              <span>Setujui & Buka Gerai</span>
+              <CheckCircle2 className="h-4 w-4" />
+              <span>Selesaikan Pendaftaran</span>
             </Button>
           </div>
         </form>
       )}
-
-      <div className="text-center pt-2">
-        <span className="text-[10px] text-muted-foreground flex items-center justify-center gap-1">
-          <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-          Proses verifikasi anti-fraud mitra resmi FOODRESCUE
-        </span>
-      </div>
     </div>
   );
 }

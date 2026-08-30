@@ -11,6 +11,7 @@ import {
   Clock,
   Heart,
   Info,
+  MapPin,
   Minus,
   PackageOpen,
   Plus,
@@ -227,14 +228,17 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
             </div>
 
             <a
-              href={`https://maps.google.com/?q=${encodeURIComponent(
-                listing.merchant.address
-              )}`}
+              href={
+                listing.merchant.location?.lat && listing.merchant.location?.lng
+                  ? `https://www.google.com/maps/dir/?api=1&destination=${listing.merchant.location.lat},${listing.merchant.location.lng}`
+                  : `https://maps.google.com/?q=${encodeURIComponent(listing.merchant.address)}`
+              }
               target="_blank"
               rel="noreferrer"
-              className="text-xs font-bold text-primary hover:underline shrink-0"
+              className="text-xs font-bold text-primary hover:underline shrink-0 flex items-center gap-1"
             >
-              Lihat Peta
+              <MapPin className="h-3.5 w-3.5" />
+              <span>Petunjuk Arah</span>
             </a>
           </div>
         </Card>
