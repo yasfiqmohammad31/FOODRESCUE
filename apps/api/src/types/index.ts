@@ -4,6 +4,7 @@ export interface Env {
   APP_NAME: string;
   JWT_ACCESS_SECRET: string;
   XENDIT_CALLBACK_TOKEN: string;
+  XENDIT_SECRET_KEY?: string;
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
   FONNTE_TOKEN?: string;
