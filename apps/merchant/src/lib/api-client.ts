@@ -142,9 +142,14 @@ export const merchantApi = {
 
   // Listings Management
   async getListings() {
-    const res = await fetchMerchantApi<Listing[]>("/api/listings?radius=25");
+    const res = await fetchMerchantApi<Listing[]>("/api/listings/merchant/my-listings");
     if (res.success && Array.isArray(res.data)) {
       return res.data;
+    }
+    // Fallback to general endpoint if needed
+    const fallbackRes = await fetchMerchantApi<Listing[]>("/api/listings?radius=50");
+    if (fallbackRes.success && Array.isArray(fallbackRes.data)) {
+      return fallbackRes.data;
     }
     return [];
   },
@@ -162,6 +167,26 @@ export const merchantApi = {
   }) {
     return fetchMerchantApi("/api/listings", {
       method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async updateListing(
+    listingId: string,
+    payload: {
+      title?: string;
+      description?: string;
+      category?: string;
+      originalPrice?: number;
+      discountedPrice?: number;
+      quantityTotal?: number;
+      pickupStart?: string;
+      pickupEnd?: string;
+      allergens?: string[];
+    }
+  ) {
+    return fetchMerchantApi(`/api/listings/${listingId}`, {
+      method: "PATCH",
       body: JSON.stringify(payload),
     });
   },

@@ -29,7 +29,7 @@ import { merchantApi } from "@/lib/api-client";
 
 export default function MerchantSettingsPage() {
   const router = useRouter();
-  const [isStoreOpen, setIsStoreOpen] = useState(true);
+  const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [storeName, setStoreName] = useState("");
   const [categories, setCategories] = useState<string[]>([
     "Bakery & Pastry",

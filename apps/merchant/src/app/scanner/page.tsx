@@ -29,6 +29,7 @@ import type { Order } from "@/types";
 export default function MerchantScannerPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -43,12 +44,27 @@ export default function MerchantScannerPage() {
   const [isCompleted, setIsCompleted] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      if (stream && stream.getTracks) {
+        stream.getTracks().forEach((t) => t.stop());
+      }
+      videoRef.current.srcObject = null;
+    }
+    setScanStream(null);
+    setIsCameraActive(false);
+    setFlashlightOn(false);
+  };
+
   // Initialize and start live camera
   const startCamera = async (mode: "environment" | "user" = facingMode) => {
     try {
-      if (scanStream) {
-        scanStream.getTracks().forEach((t) => t.stop());
-      }
+      stopCamera();
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -58,13 +74,14 @@ export default function MerchantScannerPage() {
         },
       });
 
+      streamRef.current = stream;
       setScanStream(stream);
       setHasCameraPermission(true);
       setIsCameraActive(true);
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        videoRef.current.play().catch(() => {});
       }
     } catch (err: any) {
       console.warn("[Scanner Camera]", err);
@@ -73,18 +90,11 @@ export default function MerchantScannerPage() {
     }
   };
 
-  const stopCamera = () => {
-    if (scanStream) {
-      scanStream.getTracks().forEach((t) => t.stop());
-      setScanStream(null);
-    }
-    setIsCameraActive(false);
-  };
-
   // Toggle Torch/Flashlight
   const toggleTorch = async () => {
-    if (scanStream) {
-      const track = scanStream.getVideoTracks()[0];
+    const activeStream = streamRef.current || scanStream;
+    if (activeStream) {
+      const track = activeStream.getVideoTracks()[0];
       const capabilities = track.getCapabilities ? (track.getCapabilities() as any) : null;
       if (capabilities && capabilities.torch) {
         try {
@@ -147,13 +157,23 @@ export default function MerchantScannerPage() {
     };
   }, [isCameraActive, verifiedOrder, isVerifying]);
 
-  // Start camera on mount if permissions allow
+  // Start camera on mount and reliably cleanup on unmount
   useEffect(() => {
     if (typeof window !== "undefined" && typeof navigator?.mediaDevices?.getUserMedia === "function") {
       startCamera("environment");
     }
     return () => {
-      stopCamera();
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        if (stream && stream.getTracks) {
+          stream.getTracks().forEach((t) => t.stop());
+        }
+        videoRef.current.srcObject = null;
+      }
     };
   }, []);
 

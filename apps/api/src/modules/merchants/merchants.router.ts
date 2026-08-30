@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { db } from "../../db/mock-db";
-import { sanitizeText } from "../../utils/security";
+import { sanitizeText, sanitizeUrl } from "../../utils/security";
 import type { Env, MerchantProfile } from "../../types";
 
 export const MERCHANT_CATEGORIES = [
@@ -76,11 +76,40 @@ merchantsRouter.get("/categories", (c) => {
 
 export function getMerchantForContext(c: any): MerchantProfile {
   const authHeader = c.req.header("authorization") || "";
-  const xUserId = c.req.header("x-user-id") || c.req.query("userId") || c.req.query("merchantId");
+  const xUserId = c.req.header("x-user-id") || c.req.header("x-merchant-id") || c.req.query("userId") || c.req.query("merchantId");
 
   if (xUserId) {
     const found = db.merchants.find((m) => m.userId === xUserId || m.id === xUserId);
     if (found) return found;
+
+    // Check if user exists with this ID
+    const user = db.users.find((u) => u.id === xUserId);
+    if (user) {
+      const newM: MerchantProfile = {
+        id: `mer-${user.id}`,
+        userId: user.id,
+        storeName: (user as any).storeName || user.name || "Mitra Gerai",
+        category: (user as any).category || "Bakery & Pastry",
+        businessPhone: user.phone || "",
+        address: "",
+        mapsUrl: "",
+        location: { lat: -7.2856, lng: 112.6954 },
+        openTime: "08:00",
+        closeTime: "21:00",
+        bankName: "BCA",
+        accountNumber: "",
+        accountHolder: "",
+        isStoreOpen: false,
+        agreedSlaAt: new Date().toISOString(),
+        picName: user.name || "Pemilik Gerai",
+        avgRating: null as any,
+        totalReviews: 0,
+        isVerified: false,
+        createdAt: new Date().toISOString(),
+      };
+      db.merchants.push(newM);
+      return newM;
+    }
   }
 
   if (authHeader.startsWith("Bearer ")) {
@@ -93,7 +122,6 @@ export function getMerchantForContext(c: any): MerchantProfile {
           const found = db.merchants.find((m) => m.userId === payload.sub || m.id === payload.sub);
           if (found) return found;
 
-          // If user exists with role MERCHANT, create clean profile
           const user = db.users.find((u) => u.id === payload.sub);
           if (user) {
             const newM: MerchantProfile = {
@@ -103,6 +131,7 @@ export function getMerchantForContext(c: any): MerchantProfile {
               category: (user as any).category || "Bakery & Pastry",
               businessPhone: user.phone || "",
               address: "",
+              mapsUrl: "",
               location: { lat: -7.2856, lng: 112.6954 },
               openTime: "08:00",
               closeTime: "21:00",
@@ -129,29 +158,30 @@ export function getMerchantForContext(c: any): MerchantProfile {
     return db.merchants[db.merchants.length - 1];
   }
 
-  const defaultMerchant: MerchantProfile = {
-    id: "mer-01",
-    userId: "usr-mer-001",
-    storeName: "Artisan Bakery & Cafe",
+  const cleanFallback: MerchantProfile = {
+    id: `mer-${Date.now().toString().slice(-6)}`,
+    userId: `usr-${Date.now().toString().slice(-6)}`,
+    storeName: "Mitra Gerai",
     category: "Bakery & Pastry",
-    businessPhone: "+6281987654321",
-    address: "Jl. Raya Darmo Permai No. 45, Surabaya",
+    businessPhone: "",
+    address: "",
+    mapsUrl: "",
     location: { lat: -7.2856, lng: 112.6954 },
     openTime: "08:00",
-    closeTime: "22:00",
+    closeTime: "21:00",
     bankName: "BCA",
-    accountNumber: "8271928401",
-    accountHolder: "Artisan Bakery Official",
+    accountNumber: "",
+    accountHolder: "",
     isStoreOpen: false,
     agreedSlaAt: new Date().toISOString(),
-    picName: "Budi Santoso",
-    avgRating: 5.0,
+    picName: "Mitra Gerai",
+    avgRating: null as any,
     totalReviews: 0,
-    isVerified: true,
+    isVerified: false,
     createdAt: new Date().toISOString(),
   };
-  db.merchants.push(defaultMerchant);
-  return defaultMerchant;
+  db.merchants.push(cleanFallback);
+  return cleanFallback;
 }
 
 // GET /merchants/profile
@@ -189,7 +219,7 @@ merchantsRouter.patch("/profile", zValidator("json", updateProfileSchema), (c) =
   if (body.storeName) merchant.storeName = sanitizeText(body.storeName);
   if (body.category) merchant.category = sanitizeText(body.category);
   if (body.address !== undefined) merchant.address = sanitizeText(body.address);
-  if (body.mapsUrl !== undefined) merchant.mapsUrl = body.mapsUrl ? sanitizeText(body.mapsUrl) : "";
+  if (body.mapsUrl !== undefined) merchant.mapsUrl = body.mapsUrl ? sanitizeUrl(body.mapsUrl) : "";
   if (body.location && typeof body.location.lat === "number" && typeof body.location.lng === "number") {
     merchant.location = {
       lat: body.location.lat,
@@ -308,7 +338,7 @@ merchantsRouter.post("/onboarding/step-1", zValidator("json", step1Schema), (c) 
   merchant.category = body.category;
   merchant.businessPhone = body.businessPhone;
   merchant.address = sanitizeText(body.address);
-  if (body.mapsUrl !== undefined) merchant.mapsUrl = body.mapsUrl ? sanitizeText(body.mapsUrl) : "";
+  if (body.mapsUrl !== undefined) merchant.mapsUrl = body.mapsUrl ? sanitizeUrl(body.mapsUrl) : "";
   if (body.location && typeof body.location.lat === "number" && typeof body.location.lng === "number") {
     merchant.location = {
       lat: body.location.lat,

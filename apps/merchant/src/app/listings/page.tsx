@@ -8,6 +8,7 @@ import {
   Bot,
   CheckCircle2,
   Clock,
+  Edit,
   Edit2,
   Minus,
   PackageOpen,
@@ -31,6 +32,18 @@ export default function MerchantListingsPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Full Edit Listing Modal State
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editCategory, setEditCategory] = useState<ListingCategory>("MYSTERY_BOX");
+  const [editOriginalPrice, setEditOriginalPrice] = useState("");
+  const [editDiscountedPrice, setEditDiscountedPrice] = useState("");
+  const [editQuantityTotal, setEditQuantityTotal] = useState("");
+  const [editPickupStart, setEditPickupStart] = useState("");
+  const [editPickupEnd, setEditPickupEnd] = useState("");
+  const [editFormErrors, setEditFormErrors] = useState<Record<string, string>>({});
+
   // Stock Edit Modal State
   const [editingStockListing, setEditingStockListing] = useState<Listing | null>(null);
   const [stockInput, setStockInput] = useState<number>(0);
@@ -47,25 +60,22 @@ export default function MerchantListingsPage() {
   };
 
   // Fetch real-time listings from API
-  useEffect(() => {
-    let isMounted = true;
-    const fetchListings = async () => {
-      setIsLoading(true);
-      try {
-        const data = await merchantApi.getListings();
-        if (isMounted && data && Array.isArray(data)) {
-          setListings(data);
-        }
-      } catch (err) {
-        console.warn("Failed to fetch listings:", err);
-      } finally {
-        if (isMounted) setIsLoading(false);
+  const fetchListings = async () => {
+    setIsLoading(true);
+    try {
+      const data = await merchantApi.getListings();
+      if (data && Array.isArray(data)) {
+        setListings(data);
       }
-    };
+    } catch (err) {
+      console.warn("Failed to fetch listings:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchListings();
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   // Form State for new listing
@@ -120,6 +130,105 @@ export default function MerchantListingsPage() {
     }
     setEditingStockListing(null);
     showToast(`Stok "${editingStockListing.title}" diubah menjadi ${validatedStock} porsi.`);
+  };
+
+  const handleOpenEditModal = (listing: Listing) => {
+    setEditingListing(listing);
+    setEditTitle(listing.title || "");
+    setEditDescription(listing.description || "");
+    setEditCategory(listing.category || "MYSTERY_BOX");
+    setEditOriginalPrice((listing.originalPrice ?? 0).toString());
+    setEditDiscountedPrice((listing.discountedPrice ?? 0).toString());
+    setEditQuantityTotal((listing.quantityTotal ?? 1).toString());
+
+    try {
+      const startD = new Date(listing.pickupStart);
+      const endD = new Date(listing.pickupEnd);
+      setEditPickupStart(startD.toTimeString().slice(0, 5));
+      setEditPickupEnd(endD.toTimeString().slice(0, 5));
+    } catch {
+      setEditPickupStart("18:00");
+      setEditPickupEnd("21:00");
+    }
+    setEditFormErrors({});
+  };
+
+  const handleSaveEditListing = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingListing) return;
+
+    const newErrors: Record<string, string> = {};
+    if (!editTitle.trim() || editTitle.trim().length < 3) {
+      newErrors.title = "Nama paket minimal 3 karakter.";
+    }
+    if (!editDescription.trim() || editDescription.trim().length < 5) {
+      newErrors.description = "Deskripsi paket minimal 5 karakter.";
+    }
+
+    const origPriceNum = Number(editOriginalPrice);
+    const discPriceNum = Number(editDiscountedPrice);
+    const qtyNum = Number(editQuantityTotal);
+
+    if (!origPriceNum || origPriceNum <= 0) {
+      newErrors.originalPrice = "Harga normal harus lebih dari Rp 0.";
+    }
+    if (!discPriceNum || discPriceNum <= 0) {
+      newErrors.discountedPrice = "Harga diskon harus lebih dari Rp 0.";
+    } else if (discPriceNum >= origPriceNum) {
+      newErrors.discountedPrice = "Harga rescue harus lebih rendah dari harga normal.";
+    }
+    if (!qtyNum || qtyNum < 1) {
+      newErrors.quantity = "Minimal 1 porsi.";
+    }
+
+    setEditFormErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
+
+    const now = new Date();
+    const todayStr = now.toISOString().split("T")[0];
+    const pickupStartIso = new Date(`${todayStr}T${editPickupStart}:00`).toISOString();
+    const pickupEndIso = new Date(`${todayStr}T${editPickupEnd}:00`).toISOString();
+
+    const targetId = editingListing.id;
+    try {
+      const res = await merchantApi.updateListing(targetId, {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+        category: editCategory,
+        originalPrice: origPriceNum,
+        discountedPrice: discPriceNum,
+        quantityTotal: qtyNum,
+        pickupStart: pickupStartIso,
+        pickupEnd: pickupEndIso,
+      });
+
+      if (res.success && res.listing) {
+        setListings(listings.map((l) => (l.id === targetId ? res.listing : l)));
+      } else {
+        setListings(
+          listings.map((l) =>
+            l.id === targetId
+              ? {
+                  ...l,
+                  title: editTitle.trim(),
+                  description: editDescription.trim(),
+                  category: editCategory,
+                  originalPrice: origPriceNum,
+                  discountedPrice: discPriceNum,
+                  quantityTotal: qtyNum,
+                  pickupStart: pickupStartIso,
+                  pickupEnd: pickupEndIso,
+                }
+              : l
+          )
+        );
+      }
+    } catch (err) {
+      console.warn("Edit listing fallback:", err);
+    }
+
+    setEditingListing(null);
+    showToast("Detail paket surplus berhasil diperbarui!");
   };
 
   const handleConfirmDelete = async () => {
@@ -181,8 +290,8 @@ export default function MerchantListingsPage() {
 
     try {
       const res = await merchantApi.createListing({
-        title,
-        description,
+        title: title.trim(),
+        description: description.trim(),
         category,
         originalPrice: origPriceNum,
         discountedPrice: discPriceNum,
@@ -194,35 +303,7 @@ export default function MerchantListingsPage() {
       if (res.success && res.listing) {
         setListings([res.listing, ...listings]);
       } else {
-        const newListing: Listing = {
-          id: `lst-${Date.now().toString().slice(-4)}`,
-          merchantId: "mer-01",
-          title,
-          description,
-          category,
-          originalPrice: origPriceNum,
-          discountedPrice: discPriceNum,
-          quantityTotal: qtyNum,
-          quantityRemaining: qtyNum,
-          pickupStart: pickupStartIso,
-          pickupEnd: pickupEndIso,
-          status: "ACTIVE",
-          aiSuggestedPrice: null,
-          allergens: [],
-          photoUrl:
-            category === "MYSTERY_BOX"
-              ? "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600"
-              : "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600",
-          merchant: {
-            storeName: "Artisan Bakery & Cafe",
-            address: "Jl. Raya Darmo Permai No. 45, Surabaya",
-            location: { lat: -7.2856, lng: 112.6954 },
-            avgRating: 4.9,
-            isVerified: true,
-          },
-          createdAt: new Date().toISOString(),
-        };
-        setListings([newListing, ...listings]);
+        await fetchListings();
       }
     } catch (e) {
       console.warn("Create listing fallback:", e);
@@ -256,7 +337,7 @@ export default function MerchantListingsPage() {
           Kelola Paket Surplus
         </h1>
         <p className="text-xs text-muted-foreground">
-          Daftar paket surplus aktif yang dapat direservasi pembeli.
+          Daftar paket surplus gerai Anda yang dapat direservasi pembeli.
         </p>
       </div>
 
@@ -269,7 +350,7 @@ export default function MerchantListingsPage() {
         <span>Buat Listing Baru</span>
       </Button>
 
-      {/* AI Dynamic Pricing Alert (Ultra Compact) */}
+      {/* AI Dynamic Pricing Alert */}
       <div className="rounded-xl border border-primary/20 bg-[#F3EFE6] px-3 py-2 text-foreground shadow-2xs flex items-center gap-2">
         <Bot className="h-3.5 w-3.5 text-primary shrink-0" />
         <p className="text-[11px] text-muted-foreground truncate">
@@ -277,13 +358,29 @@ export default function MerchantListingsPage() {
         </p>
       </div>
 
-      {/* Listings List (Modern Horizontal Row Cards matching Customer Layout) */}
+      {/* Listings List */}
       <div className="flex flex-col gap-2.5">
         {isLoading ? (
           <>
             <MerchantListingCardSkeleton />
             <MerchantListingCardSkeleton />
           </>
+        ) : listings.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border p-8 text-center bg-card flex flex-col items-center gap-2">
+            <PackageOpen className="h-10 w-10 text-muted-foreground/60" />
+            <p className="text-xs font-bold text-foreground">Belum Ada Listing Surplus</p>
+            <p className="text-[11px] text-muted-foreground max-w-xs">
+              Buat paket surplus perdana Anda agar gerai dapat dibuka dan makanan tidak terbuang sia-sia.
+            </p>
+            <Button
+              size="sm"
+              onClick={() => setIsModalOpen(true)}
+              className="mt-2 text-xs font-bold rounded-xl bg-primary text-white"
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Buat Paket Pertama
+            </Button>
+          </div>
         ) : (
           listings.map((listing) => {
             const discount = discountPercent(listing.originalPrice, listing.discountedPrice);
@@ -296,7 +393,7 @@ export default function MerchantListingsPage() {
                 className="overflow-hidden border border-border bg-card p-2.5 shadow-2xs transition hover:border-primary/40 rounded-2xl flex flex-col gap-2"
               >
                 <div className="flex gap-3 items-center">
-                  {/* Left Photo Container (Identical to Customer App) */}
+                  {/* Left Photo Container */}
                   <div className="relative h-24 w-24 shrink-0 rounded-xl overflow-hidden bg-muted">
                     <Image
                       src={listing.photoUrl}
@@ -372,6 +469,19 @@ export default function MerchantListingsPage() {
                       </div>
 
                       <div className="flex items-center gap-1">
+                        {/* Edit Full Details Button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEditModal(listing)}
+                          className="h-6.5 text-[10px] font-bold rounded-lg px-2 gap-1 border-border text-foreground hover:bg-muted"
+                          title="Ubah Detail Paket"
+                        >
+                          <Edit className="h-2.5 w-2.5 text-foreground" />
+                          <span>Edit</span>
+                        </Button>
+
+                        {/* Quick Stock Button */}
                         <Button
                           variant="outline"
                           size="sm"
@@ -379,9 +489,10 @@ export default function MerchantListingsPage() {
                           className="h-6.5 text-[10px] font-bold rounded-lg px-2 gap-1 border-primary text-primary hover:bg-primary/10"
                         >
                           <Edit2 className="h-2.5 w-2.5" />
-                          <span>Ubah Stok</span>
+                          <span>Stok</span>
                         </Button>
 
+                        {/* Delete Button */}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -396,7 +507,7 @@ export default function MerchantListingsPage() {
                   </div>
                 </div>
 
-                {/* AI Dynamic Price Suggestion (Compact Bar) */}
+                {/* AI Dynamic Price Suggestion */}
                 {listing.aiSuggestedPrice && (
                   <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-xs flex items-center justify-between gap-2 text-[#78350F]">
                     <div className="flex items-center gap-1.5 min-w-0">
@@ -419,6 +530,174 @@ export default function MerchantListingsPage() {
           })
         )}
       </div>
+
+      {/* Full Edit Listing Modal */}
+      {editingListing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl bg-card p-5 shadow-2xl border border-border max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Edit className="h-4 w-4 text-primary" />
+                <h2 className="text-sm font-black text-foreground">Edit Detail Paket Surplus</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingListing(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditListing} className="py-4 space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                  Nama Paket
+                </label>
+                <Input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  required
+                  className={`h-9 text-xs rounded-xl ${editFormErrors.title ? "border-destructive" : ""}`}
+                />
+                {editFormErrors.title && (
+                  <span className="text-[10px] text-destructive font-semibold mt-1 block">
+                    {editFormErrors.title}
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                  Kategori
+                </label>
+                <select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value as ListingCategory)}
+                  className="w-full h-9 rounded-xl border border-input bg-card px-3 text-xs font-semibold text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
+                >
+                  <option value="MYSTERY_BOX">Mystery Box (Paket Kejutan)</option>
+                  <option value="REGULAR">Menu Spesifik / Satuan</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                  Deskripsi Paket
+                </label>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  required
+                  rows={2}
+                  className={`w-full rounded-xl border bg-card p-2 text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary ${
+                    editFormErrors.description ? "border-destructive" : "border-input"
+                  }`}
+                />
+                {editFormErrors.description && (
+                  <span className="text-[10px] text-destructive font-semibold mt-1 block">
+                    {editFormErrors.description}
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                    Harga Normal (Rp)
+                  </label>
+                  <Input
+                    type="number"
+                    value={editOriginalPrice}
+                    onChange={(e) => setEditOriginalPrice(e.target.value)}
+                    required
+                    className={`h-9 text-xs rounded-xl ${editFormErrors.originalPrice ? "border-destructive" : ""}`}
+                  />
+                  {editFormErrors.originalPrice && (
+                    <span className="text-[10px] text-destructive font-semibold mt-1 block">
+                      {editFormErrors.originalPrice}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                    Harga Rescue (Diskon)
+                  </label>
+                  <Input
+                    type="number"
+                    value={editDiscountedPrice}
+                    onChange={(e) => setEditDiscountedPrice(e.target.value)}
+                    required
+                    className={`h-9 text-xs rounded-xl ${editFormErrors.discountedPrice ? "border-destructive" : ""}`}
+                  />
+                  {editFormErrors.discountedPrice && (
+                    <span className="text-[10px] text-destructive font-semibold mt-1 block">
+                      {editFormErrors.discountedPrice}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                    Total Kuota
+                  </label>
+                  <Input
+                    type="number"
+                    value={editQuantityTotal}
+                    onChange={(e) => setEditQuantityTotal(e.target.value)}
+                    required
+                    min={1}
+                    className="h-9 text-xs rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                    Mulai Ambil
+                  </label>
+                  <Input
+                    type="time"
+                    value={editPickupStart}
+                    onChange={(e) => setEditPickupStart(e.target.value)}
+                    required
+                    className="h-9 text-xs rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                    Selesai Ambil
+                  </label>
+                  <Input
+                    type="time"
+                    value={editPickupEnd}
+                    onChange={(e) => setEditPickupEnd(e.target.value)}
+                    required
+                    className="h-9 text-xs rounded-xl"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingListing(null)}
+                  className="flex-1 text-xs font-bold h-9 rounded-xl"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-primary text-white text-xs font-black h-9 rounded-xl shadow-xs"
+                >
+                  Simpan Perubahan
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Stock Edit Modal */}
       {editingStockListing && (
@@ -738,4 +1017,3 @@ function MerchantListingCardSkeleton() {
     </Card>
   );
 }
-

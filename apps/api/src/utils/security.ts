@@ -71,7 +71,7 @@ export async function verifyJwt<T = Record<string, any>>(
   }
 }
 
-// Basic HTML sanitization for XSS prevention
+// Basic HTML sanitization for XSS prevention (preserves slashes for normal text/paths)
 export function sanitizeText(input: string): string {
   if (!input) return "";
   return input
@@ -79,8 +79,16 @@ export function sanitizeText(input: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;")
-    .replace(/\//g, "&#x2F;");
+    .replace(/'/g, "&#x27;");
+}
+
+export function sanitizeUrl(input: string): string {
+  if (!input) return "";
+  const trimmed = input.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  return "";
 }
 
 function base64UrlEncode(str: string): string {
