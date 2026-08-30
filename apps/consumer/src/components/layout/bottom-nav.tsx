@@ -1,48 +1,71 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Award, Compass, MapPin, ReceiptText, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface NavItem {
-  label: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  badge?: number;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  {
-    label: "Jelajah",
-    href: "/feed",
-    icon: Compass,
-  },
-  {
-    label: "Peta",
-    href: "/map",
-    icon: MapPin,
-  },
-  {
-    label: "Pesanan",
-    href: "/orders",
-    icon: ReceiptText,
-    badge: 1, // 1 active confirmed order
-  },
-  {
-    label: "Dampak",
-    href: "/impact",
-    icon: Award,
-  },
-  {
-    label: "Profil",
-    href: "/profile",
-    icon: UserCircle,
-  },
-];
+import { consumerApi } from "@/lib/api-client";
 
 export function BottomNav() {
   const pathname = usePathname();
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+    consumerApi
+      .getActiveOrders()
+      .then((orders) => {
+        if (isMounted && Array.isArray(orders)) {
+          const active = orders.filter(
+            (o) =>
+              o.status === "UNDO_WINDOW" ||
+              o.status === "CONFIRMED" ||
+              o.status === "PREPARING" ||
+              o.status === "READY"
+          );
+          setActiveOrdersCount(active.length);
+        } else if (isMounted) {
+          setActiveOrdersCount(0);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setActiveOrdersCount(0);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [pathname]);
+
+  const navItems = [
+    {
+      label: "Jelajah",
+      href: "/feed",
+      icon: Compass,
+    },
+    {
+      label: "Peta",
+      href: "/map",
+      icon: MapPin,
+    },
+    {
+      label: "Pesanan",
+      href: "/orders",
+      icon: ReceiptText,
+      badge: activeOrdersCount > 0 ? activeOrdersCount : undefined,
+    },
+    {
+      label: "Dampak",
+      href: "/impact",
+      icon: Award,
+    },
+    {
+      label: "Profil",
+      href: "/profile",
+      icon: UserCircle,
+    },
+  ];
 
   // Hide bottom nav on immersive transaction, detail, and auth flows
   if (
@@ -64,7 +87,7 @@ export function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-md border-t border-border/80 bg-card/95 backdrop-blur-md pb-[max(0.375rem,env(safe-area-inset-bottom,0.375rem))]"
     >
       <div className="flex h-14 items-center justify-around px-2">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || (item.href !== "/feed" && pathname.startsWith(item.href));
 
