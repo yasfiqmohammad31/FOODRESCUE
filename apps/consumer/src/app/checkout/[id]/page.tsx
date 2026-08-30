@@ -116,14 +116,34 @@ export default function CheckoutPage({ params }: CheckoutPageProps) {
     setIsProcessing(true);
 
     try {
+      const activeMethod = finalPayable === 0 ? "RESCUE_CREDIT" : paymentMethod;
       const res = await consumerApi.createOrder({
         listingId: listing.id,
         quantity,
-        paymentMethod: (finalPayable === 0 ? "RESCUE_CREDIT" : paymentMethod) as string,
+        paymentMethod: activeMethod as string,
         useRescueCredit,
       });
 
       if (res.success && res.order) {
+        if (finalPayable > 0 && (activeMethod === "QRIS" || activeMethod === "EWALLET")) {
+          const userRaw = typeof window !== "undefined" ? localStorage.getItem("fr_user") : null;
+          const user = userRaw ? JSON.parse(userRaw) : null;
+
+          const invRes = await consumerApi.createInvoice({
+            orderId: res.order.id,
+            amount: finalPayable,
+            paymentMethod: activeMethod,
+            customerEmail: user?.email,
+            customerName: user?.name,
+            customerPhone: user?.phone,
+          });
+
+          if (invRes.success && invRes.paymentUrl && invRes.isLiveXendit) {
+            window.location.href = invRes.paymentUrl;
+            return;
+          }
+        }
+
         router.push(`/undo/${res.order.id}?listingId=${listing.id}&qty=${quantity}&price=${finalPayable}`);
       } else {
         const orderId = `ord-${Date.now().toString().slice(-6)}`;

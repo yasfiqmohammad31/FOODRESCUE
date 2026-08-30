@@ -106,6 +106,31 @@ export const consumerApi = {
     return [];
   },
 
+  // Payments & Invoices
+  async createInvoice(payload: {
+    orderId: string;
+    amount: number;
+    paymentMethod: string;
+    customerEmail?: string;
+    customerName?: string;
+    customerPhone?: string;
+  }) {
+    return fetchApi<{
+      success: boolean;
+      isLiveXendit?: boolean;
+      invoiceId: string;
+      orderId: string;
+      amount: number;
+      paymentMethod: string;
+      paymentUrl: string | null;
+      qrisString: string | null;
+      expiresAt: string;
+    }>("/api/payments/create-invoice", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+
   // 60s Undo Window
   async undoOrder(orderId: string) {
     const res = await fetchApi(`/api/orders/${orderId}/undo`, {

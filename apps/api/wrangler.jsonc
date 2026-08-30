@@ -9,7 +9,8 @@
     "ENVIRONMENT": "development",
     "APP_NAME": "FOODRESCUE API",
     "JWT_ACCESS_SECRET": "foodrescue_super_jwt_secret_dev_key_2026",
-    "XENDIT_CALLBACK_TOKEN": "xnd_dev_callback_token_secret"
+    "XENDIT_CALLBACK_TOKEN": "eUa6S7GI0kOERTVbyZsp0qNikwzj8TPJmVlKvcn5Hhp5qTLQ",
+    "XENDIT_SECRET_KEY": "xnd_development_6VbIPAc7ev4I5DNA2j3AIlwI6KE0CZhnpAhe6sSESd5gmC1YHh75s9XvhlubiV"
   },
 
   // KV Namespaces (Geohash Feed Cache, Session, Rate Limiter)
