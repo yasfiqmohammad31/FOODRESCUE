@@ -36,6 +36,12 @@ const otpSchema = z.object({
   code: z.string().length(6),
 });
 
+const updateProfileSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(2).optional(),
+  phone: z.string().optional(),
+});
+
 // POST /auth/login
 authRouter.post("/login", zValidator("json", loginSchema), async (c) => {
   const { identifier, role } = c.req.valid("json");
@@ -49,7 +55,7 @@ authRouter.post("/login", zValidator("json", loginSchema), async (c) => {
     id: role === "MERCHANT" ? "usr-mer-001" : "usr-cns-001",
     email: cleanIdentifier.includes("@") ? cleanIdentifier : `${cleanIdentifier}@foodrescue.id`,
     name: role === "MERCHANT" ? "Mitra Merchant" : "Food Hero",
-    phone: cleanIdentifier.includes("@") ? "+6281234567890" : cleanIdentifier,
+    phone: cleanIdentifier.includes("@") ? "" : cleanIdentifier,
     role,
     createdAt: new Date().toISOString(),
   };
@@ -149,7 +155,7 @@ authRouter.post("/google", zValidator("json", googleAuthSchema), async (c) => {
       id: `usr-g-${Date.now()}`,
       email: googleEmail,
       name: googleName,
-      phone: "+628120000000",
+      phone: "",
       role,
       createdAt: new Date().toISOString(),
     };
@@ -227,5 +233,32 @@ authRouter.post("/otp/verify", zValidator("json", otpSchema), async (c) => {
   return c.json({
     success: true,
     message: result.message,
+  });
+});
+
+// PATCH /auth/profile
+authRouter.patch("/profile", zValidator("json", updateProfileSchema), async (c) => {
+  const { id, name, phone } = c.req.valid("json");
+
+  let targetUser = id ? db.users.find((u) => u.id === id) : null;
+  if (!targetUser) {
+    targetUser = db.users[0];
+  }
+
+  if (!targetUser) {
+    return c.json({ success: false, message: "Pengguna tidak ditemukan." }, 404);
+  }
+
+  if (name) {
+    targetUser.name = sanitizeText(name);
+  }
+  if (phone !== undefined) {
+    targetUser.phone = sanitizeText(phone).trim();
+  }
+
+  return c.json({
+    success: true,
+    message: "Profil pengguna berhasil diperbarui.",
+    user: targetUser,
   });
 });

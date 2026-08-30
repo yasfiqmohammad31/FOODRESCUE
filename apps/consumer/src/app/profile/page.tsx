@@ -1,44 +1,40 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  AlertCircle,
   Award,
   Bell,
   CheckCircle2,
   ChevronRight,
   Clock,
-  ExternalLink,
   HelpCircle,
-  Info,
   LogOut,
+  Mail,
   MessageCircle,
-  Moon,
+  Pencil,
+  Phone,
   RotateCcw,
-  Shield,
-  ShieldAlert,
   ShieldCheck,
   Smartphone,
-  Sparkles,
   User,
   Utensils,
   Wallet,
   X,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { formatRupiah } from "@/lib/utils";
+import { consumerApi } from "@/lib/api-client";
 
 interface UserProfile {
+  id?: string;
   name: string;
   email: string;
   phone: string;
-  avatarUrl: string;
 }
 
 const ALLERGEN_OPTIONS = [
@@ -57,9 +53,15 @@ export default function ProfilePage() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   // Modals state
-  const [activeModal, setActiveModal] = useState<"SAFETY" | "HELP" | "ALLERGENS" | null>(null);
+  const [activeModal, setActiveModal] = useState<"EDIT_PROFILE" | "SAFETY" | "HELP" | "ALLERGENS" | null>(null);
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Edit Profile Form State
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editError, setEditError] = useState("");
 
   // Load real authenticated user profile
   useEffect(() => {
@@ -68,18 +70,94 @@ export default function ProfilePage() {
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-          setUser({
+          const userData: UserProfile = {
+            id: parsed.id,
             name: parsed.name || "Food Rescuer",
             email: parsed.email || "user@kampus.ac.id",
-            phone: parsed.phone || "-",
-            avatarUrl: parsed.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400",
-          });
+            phone: parsed.phone || "",
+          };
+          setUser(userData);
+          setEditName(userData.name);
+          setEditPhone(userData.phone);
         } catch {
           // ignore
         }
       }
+
+      // Load wallet balance
+      consumerApi.getWallet().then((res: any) => {
+        if (res?.balance !== undefined) {
+          setWalletBalance(res.balance);
+        }
+      }).catch(() => {});
     }
   }, []);
+
+  const handleOpenEditModal = () => {
+    if (user) {
+      setEditName(user.name);
+      setEditPhone(user.phone);
+      setEditError("");
+      setActiveModal("EDIT_PROFILE");
+    }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) {
+      setEditError("Nama lengkap tidak boleh kosong.");
+      return;
+    }
+
+    setIsUpdating(true);
+    setEditError("");
+
+    try {
+      const res = await consumerApi.updateProfile({
+        id: user?.id,
+        name: editName.trim(),
+        phone: editPhone.trim(),
+      });
+
+      if (res.success && res.user) {
+        const updatedUser: UserProfile = {
+          id: res.user.id,
+          name: res.user.name,
+          email: res.user.email,
+          phone: res.user.phone || "",
+        };
+        setUser(updatedUser);
+        localStorage.setItem("fr_user", JSON.stringify(res.user));
+        setSaveSuccess(true);
+        setTimeout(() => {
+          setSaveSuccess(false);
+          setActiveModal(null);
+        }, 600);
+      } else {
+        // Fallback local update
+        const updatedUser: UserProfile = {
+          ...user!,
+          name: editName.trim(),
+          phone: editPhone.trim(),
+        };
+        setUser(updatedUser);
+        localStorage.setItem("fr_user", JSON.stringify(updatedUser));
+        setActiveModal(null);
+      }
+    } catch {
+      // Fallback local update
+      const updatedUser: UserProfile = {
+        ...user!,
+        name: editName.trim(),
+        phone: editPhone.trim(),
+      };
+      setUser(updatedUser);
+      localStorage.setItem("fr_user", JSON.stringify(updatedUser));
+      setActiveModal(null);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const handleToggleAllergen = (item: string) => {
     if (selectedAllergens.includes(item)) {
@@ -99,37 +177,66 @@ export default function ProfilePage() {
 
   const displayName = user?.name || "Pengguna Tamu";
   const displayEmail = user?.email || "Belum masuk akun";
-  const displayPhone = user?.phone || "-";
-  const initials = displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const displayPhone = user?.phone?.trim() || "";
+
+  // Dynamic Initials Generator
+  const nameParts = displayName.trim().split(/\s+/);
+  const initials = nameParts.length > 1
+    ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+    : displayName.slice(0, 2).toUpperCase();
 
   return (
     <div className="flex flex-col flex-1 p-4 pb-24 gap-4">
       {/* Profile Header */}
-      <Card className="p-4 bg-card border-border shadow-2xs">
-        <div className="flex items-center gap-3.5">
-          <Avatar className="h-14 w-14 border-2 border-primary/40 shadow-xs">
-            <AvatarImage src={user?.avatarUrl} />
-            <AvatarFallback className="bg-primary/15 text-primary font-bold">{initials || "FR"}</AvatarFallback>
-          </Avatar>
-
-          <div className="flex-1">
-            <div className="flex items-center gap-1.5">
-              <h1 className="text-base font-extrabold text-foreground">{displayName}</h1>
-              {user && <Badge className="bg-primary text-white text-[10px] py-0">Food Hero</Badge>}
+      <Card className="p-4 bg-card border-border shadow-2xs rounded-2xl">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3.5">
+            {/* Dynamic Initials Avatar */}
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#2D6A4F] to-[#16432B] text-white font-black text-lg tracking-wider shadow-sm ring-2 ring-[#2D6A4F]/20">
+              {initials || "FR"}
             </div>
-            <p className="text-xs text-muted-foreground">{displayEmail}</p>
-            {user?.phone && <p className="text-[11px] text-muted-foreground mt-0.5">{displayPhone}</p>}
-            {!user && (
-              <Link href="/login" className="inline-block mt-1.5 text-xs font-bold text-primary hover:underline">
-                Masuk / Daftar Akun &rarr;
-              </Link>
-            )}
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-base font-extrabold text-foreground truncate">{displayName}</h1>
+                {user && <Badge className="bg-primary text-white text-[10px] py-0 shrink-0">Food Hero</Badge>}
+              </div>
+
+              {/* Email (Primary Identity) */}
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 truncate">
+                <Mail className="h-3 w-3 shrink-0 text-muted-foreground" />
+                <span className="truncate">{displayEmail}</span>
+              </div>
+
+              {/* Phone (WhatsApp) */}
+              <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
+                <Phone className="h-3 w-3 shrink-0 text-muted-foreground" />
+                {displayPhone ? (
+                  <span>{displayPhone}</span>
+                ) : (
+                  <span className="text-amber-600 font-medium italic">No. WhatsApp belum ditambahkan</span>
+                )}
+              </div>
+
+              {!user && (
+                <Link href="/login" className="inline-block mt-1.5 text-xs font-bold text-primary hover:underline">
+                  Masuk / Daftar Akun &rarr;
+                </Link>
+              )}
+            </div>
           </div>
+
+          {/* Edit Profile Button */}
+          {user && (
+            <button
+              type="button"
+              onClick={handleOpenEditModal}
+              aria-label="Edit Profil"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-sand-100/80 border border-border text-foreground hover:bg-sand-200 transition shadow-2xs"
+            >
+              <Pencil className="h-3.5 w-3.5 text-primary" />
+            </button>
+          )}
         </div>
       </Card>
 
@@ -150,7 +257,7 @@ export default function ProfilePage() {
       </Link>
 
       {/* Preferences Section */}
-      <Card className="p-2 bg-card border-border shadow-2xs">
+      <Card className="p-2 bg-card border-border shadow-2xs rounded-2xl">
         <div className="divide-y divide-border/60">
           {/* Notification Toggle */}
           <div className="flex items-center justify-between p-3">
@@ -197,7 +304,7 @@ export default function ProfilePage() {
       </Card>
 
       {/* Support & Safety Policy Section */}
-      <Card className="p-2 bg-card border-border shadow-2xs">
+      <Card className="p-2 bg-card border-border shadow-2xs rounded-2xl">
         <div className="divide-y divide-border/60">
           {/* Food Safety Policy Trigger */}
           <button
@@ -247,6 +354,96 @@ export default function ProfilePage() {
       <div className="text-center text-[10px] text-muted-foreground pt-1">
         FOODRESCUE v1.0.0 (MVP) • Save Food. Save Money.
       </div>
+
+      {/* ========================================================================= */}
+      {/* 0. Modal: Edit Profil (Nama & Nomor WhatsApp) */}
+      {/* ========================================================================= */}
+      {activeModal === "EDIT_PROFILE" && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-profile-title"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-200"
+        >
+          <div className="w-full max-w-md rounded-t-2xl sm:rounded-2xl border border-border bg-card p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Pencil className="h-4 w-4 text-primary" />
+                <h2 id="edit-profile-title" className="text-sm font-black text-foreground">
+                  Edit Profil Pengguna
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveModal(null)}
+                aria-label="Tutup"
+                className="p-1 rounded-full text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="space-y-3.5">
+              {editError && (
+                <div className="p-2.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-bold">
+                  {editError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                  Nama Lengkap
+                </label>
+                <Input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Nama Lengkap Anda"
+                  required
+                  className="h-10 text-xs rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                  Alamat Email (Akun Utama)
+                </label>
+                <Input
+                  type="email"
+                  value={user?.email || ""}
+                  disabled
+                  className="h-10 text-xs rounded-xl bg-muted/50 text-muted-foreground cursor-not-allowed"
+                />
+                <span className="text-[10px] text-muted-foreground mt-0.5 block">Email terhubung dengan sesi login Anda.</span>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                  Nomor WhatsApp / HP
+                </label>
+                <Input
+                  type="tel"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="08xxxxxxxxxx"
+                  className="h-10 text-xs rounded-xl font-mono"
+                />
+                <span className="text-[10px] text-muted-foreground mt-0.5 block">Digunakan untuk pengiriman kode OTP dan info pesanan.</span>
+              </div>
+
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  loading={isUpdating}
+                  className="w-full h-10 rounded-xl bg-primary text-white text-xs font-bold shadow-sm hover:bg-primary/90"
+                >
+                  {saveSuccess ? "Berhasil Disimpan!" : "Simpan Perubahan"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 1. Modal: Standar Keamanan Pangan & Higienitas */}

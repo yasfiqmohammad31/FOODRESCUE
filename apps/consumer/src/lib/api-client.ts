@@ -133,6 +133,12 @@ export const consumerApi = {
     return res;
   },
 
+  // Wallet
+  async getWallet(userId: string = "usr-cns-001") {
+    const res = await fetchApi<{ success: boolean; balance: number }>(`/api/impact/me?userId=${userId}`);
+    return res;
+  },
+
   // Auth
   async login(identifier: string, password: string, role: string = "CONSUMER") {
     return fetchApi("/api/auth/login", {
@@ -166,6 +172,13 @@ export const consumerApi = {
     return fetchApi<{ success: boolean; message: string }>("/api/auth/otp/verify", {
       method: "POST",
       body: JSON.stringify({ phone, code, newPassword }),
+    });
+  },
+
+  async updateProfile(data: { id?: string; name?: string; phone?: string }) {
+    return fetchApi<{ success: boolean; message: string; user?: any }>("/api/auth/profile", {
+      method: "PATCH",
+      body: JSON.stringify(data),
     });
   },
 
