@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Lock, Mail, Phone, ShieldCheck } from "lucide-react";
@@ -87,56 +87,74 @@ export default function ConsumerLoginPage() {
     }
   };
 
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    if (typeof window !== "undefined" && !document.getElementById("google-gsi-script")) {
-      const script = document.createElement("script");
-      script.id = "google-gsi-script";
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
+    const initGoogle = () => {
+      const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+      if (typeof window !== "undefined" && (window as any).google?.accounts?.id && googleClientId) {
+        try {
+          (window as any).google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: async (response: { credential?: string }) => {
+              if (response.credential) {
+                setIsGoogleLoading(true);
+                try {
+                  const res = await consumerApi.googleAuth(response.credential, "CONSUMER");
+                  if (res.success && res.token) {
+                    localStorage.setItem("fr_token", res.token);
+                    if (res.user) {
+                      localStorage.setItem("fr_user", JSON.stringify(res.user));
+                    }
+                    router.push("/feed");
+                  } else {
+                    setErrors({ identifier: res.message || "Autentikasi Google gagal" });
+                  }
+                } catch {
+                  router.push("/feed");
+                } finally {
+                  setIsGoogleLoading(false);
+                }
+              }
+            },
+            auto_select: false,
+            use_fedcm_for_prompt: true,
+          });
+
+          if (googleBtnRef.current) {
+            (window as any).google.accounts.id.renderButton(googleBtnRef.current, {
+              theme: "outline",
+              size: "large",
+              type: "standard",
+              shape: "rectangular",
+              text: "continue_with",
+              logo_alignment: "left",
+              width: 340,
+            });
+          }
+        } catch (e) {
+          console.warn("[GSI Init]", e);
+        }
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      if (!(window as any).google?.accounts?.id) {
+        const script = document.createElement("script");
+        script.id = "google-gsi-script";
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = initGoogle;
+        document.body.appendChild(script);
+      } else {
+        initGoogle();
+      }
     }
-  }, []);
+  }, [router]);
 
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
-    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-
-    if (typeof window !== "undefined" && (window as any).google?.accounts?.id && googleClientId) {
-      (window as any).google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: async (response: { credential?: string }) => {
-          if (response.credential) {
-            try {
-              const res = await consumerApi.googleAuth(response.credential, "CONSUMER");
-              if (res.success && res.token) {
-                localStorage.setItem("fr_token", res.token);
-                if (res.user) {
-                  localStorage.setItem("fr_user", JSON.stringify(res.user));
-                }
-                router.push("/feed");
-              } else {
-                setErrors({ identifier: res.message || "Autentikasi Google gagal" });
-              }
-            } catch {
-              router.push("/feed");
-            } finally {
-              setIsGoogleLoading(false);
-            }
-          } else {
-            setIsGoogleLoading(false);
-          }
-        },
-      });
-
-      (window as any).google.accounts.id.prompt((notification: any) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          setIsGoogleLoading(false);
-        }
-      });
-      return;
-    }
-
     try {
       const res = await consumerApi.googleAuth("google_oauth_token", "CONSUMER");
       if (res.success && res.token) {
@@ -180,16 +198,10 @@ export default function ConsumerLoginPage() {
           </p>
         </div>
 
-        {/* 1-Tap Google Sign In Button */}
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={isGoogleLoading}
-          className="w-full h-10 rounded-xl bg-card border border-border hover:bg-muted text-foreground text-xs font-bold shadow-2xs flex items-center justify-center gap-2.5 transition active:scale-[0.99] disabled:opacity-60"
-        >
-          <GoogleIcon className="h-4 w-4" />
-          <span>{isGoogleLoading ? "Menghubungkan Google..." : "Lanjutkan dengan Google"}</span>
-        </button>
+        {/* 1-Tap Google Sign In (FedCM & Mobile Popup Compliant) */}
+        <div className="w-full flex flex-col items-center justify-center min-h-[40px]">
+          <div ref={googleBtnRef} className="w-full flex justify-center [&_iframe]:!rounded-xl" />
+        </div>
 
         {/* Divider */}
         <div className="relative flex items-center justify-center">
