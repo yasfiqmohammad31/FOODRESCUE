@@ -241,6 +241,8 @@ merchantsRouter.get("/stats", (c) => {
   return c.json({
     success: true,
     stats: {
+      storeName: merchant.storeName,
+      category: merchant.category,
       todayRevenue,
       todayPortionsSaved,
       availableBalance: todayRevenue,

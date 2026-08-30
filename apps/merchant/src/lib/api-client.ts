@@ -48,12 +48,14 @@ export const merchantApi = {
       return res.stats;
     }
     return {
+      storeName: "Mitra Gerai",
+      category: "Bakery & Pastry",
       todayRevenue: 0,
       todayPortionsSaved: 0,
       availableBalance: 0,
       activeListingsCount: 0,
       pendingOrdersCount: 0,
-      storeRating: 5.0,
+      storeRating: null,
       totalReviews: 0,
       isStoreOpen: false,
     };

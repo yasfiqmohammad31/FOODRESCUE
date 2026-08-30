@@ -68,9 +68,20 @@ export default function MerchantDashboardPage() {
           if (statsData) {
             setStats(statsData);
             setIsStoreOpen(statsData.isStoreOpen ?? false);
+            if (statsData.storeName) {
+              setStoreName(statsData.storeName);
+            }
           }
           if (profileData?.merchant?.storeName) {
             setStoreName(profileData.merchant.storeName);
+            const userRawCurrent = localStorage.getItem("fr_merchant");
+            if (userRawCurrent) {
+              try {
+                const u = JSON.parse(userRawCurrent);
+                u.storeName = profileData.merchant.storeName;
+                localStorage.setItem("fr_merchant", JSON.stringify(u));
+              } catch {}
+            }
           }
           if (ordersData && Array.isArray(ordersData)) {
             setOrders(ordersData);
@@ -142,37 +153,40 @@ export default function MerchantDashboardPage() {
       )}
 
       {/* Top Title & Instant Store Toggle */}
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-1.5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-1">
             <span
-              className={`flex h-2 w-2 rounded-full ${
+              className={`flex h-2.5 w-2.5 rounded-full ${
                 isStoreOpen ? "bg-[#65A30D] animate-pulse" : "bg-destructive"
               }`}
             />
-            <span
-              className="text-[11px] font-bold text-muted-foreground truncate max-w-[150px]"
-              title={storeName}
-            >
-              {storeName}
+            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+              {isStoreOpen ? "Gerai Buka (Menerima Pesanan)" : "Gerai Tutup Sementara"}
             </span>
           </div>
-          <h1 className="text-sm sm:text-base font-black text-foreground mt-0.5">
-            Ringkasan Operasional Hari Ini
-          </h1>
+          <div className="flex items-center gap-2">
+            <Store className="h-5 w-5 text-primary shrink-0" />
+            <h1 className="text-base sm:text-lg font-black text-foreground leading-snug break-words" title={storeName}>
+              {storeName}
+            </h1>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Ringkasan Operasional & Penjualan Hari Ini
+          </p>
         </div>
 
         {/* Instant Store Toggle Button */}
         <button
           type="button"
           onClick={() => setIsToggleStoreModalOpen(true)}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-black transition border shadow-2xs ${
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition border shrink-0 shadow-2xs ${
             isStoreOpen
               ? "bg-emerald-500/10 border-emerald-500/30 text-[#2D6A4F] hover:bg-emerald-500/20"
               : "bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20"
           }`}
         >
-          <Power className="h-3 w-3" />
+          <Power className="h-3.5 w-3.5" />
           <span>{isStoreOpen ? "Gerai Buka" : "Gerai Tutup"}</span>
         </button>
       </div>
