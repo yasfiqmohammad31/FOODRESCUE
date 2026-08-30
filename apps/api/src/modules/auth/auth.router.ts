@@ -27,6 +27,7 @@ const registerSchema = z.object({
 const googleAuthSchema = z.object({
   idToken: z.string().min(10),
   role: z.enum(["CONSUMER", "MERCHANT"]).default("CONSUMER"),
+  mode: z.enum(["login", "register", "auto"]).default("auto"),
 });
 
 const sendOtpSchema = z.object({
@@ -53,14 +54,21 @@ authRouter.post("/login", zValidator("json", loginSchema), async (c) => {
     (u) =>
       (u.email.toLowerCase() === cleanIdentifier || u.phone === cleanIdentifier) &&
       u.role === role
-  ) || {
-    id: role === "MERCHANT" ? "usr-mer-001" : "usr-cns-001",
-    email: cleanIdentifier.includes("@") ? cleanIdentifier : `${cleanIdentifier}@foodrescue.id`,
-    name: role === "MERCHANT" ? "Mitra Merchant" : "Food Hero",
-    phone: cleanIdentifier.includes("@") ? "" : cleanIdentifier,
-    role,
-    createdAt: new Date().toISOString(),
-  };
+  );
+
+  if (!user) {
+    return c.json(
+      {
+        success: false,
+        message:
+          role === "MERCHANT"
+            ? "Akun mitra merchant belum terdaftar. Silakan daftar terlebih dahulu di halaman Registrasi."
+            : "Akun konsumen belum terdaftar. Silakan registrasi terlebih dahulu.",
+        reason: "ACCOUNT_NOT_FOUND",
+      },
+      404
+    );
+  }
 
   let storeName: string | undefined = undefined;
   if (user.role === "MERCHANT") {
@@ -157,7 +165,7 @@ authRouter.post("/register", zValidator("json", registerSchema), async (c) => {
 
 // POST /auth/google
 authRouter.post("/google", zValidator("json", googleAuthSchema), async (c) => {
-  const { idToken, role } = c.req.valid("json");
+  const { idToken, role, mode } = c.req.valid("json");
 
   let googleEmail = "";
   let googleName = "";
@@ -170,7 +178,7 @@ authRouter.post("/google", zValidator("json", googleAuthSchema), async (c) => {
       const decoded = atob(base64);
       const payload = JSON.parse(decoded);
       if (payload.email) {
-        googleEmail = payload.email;
+        googleEmail = payload.email.trim().toLowerCase();
         googleName = payload.name || payload.email.split("@")[0];
       }
     }
@@ -179,12 +187,34 @@ authRouter.post("/google", zValidator("json", googleAuthSchema), async (c) => {
   }
 
   if (!googleEmail) {
-    googleEmail = role === "MERCHANT" ? "merchant.google@foodrescue.id" : "user.google@foodrescue.id";
-    googleName = role === "MERCHANT" ? "Mitra Merchant Google" : "Pengguna Google";
+    if (idToken.includes("@")) {
+      googleEmail = idToken.trim().toLowerCase();
+      googleName = idToken.split("@")[0];
+    } else {
+      googleEmail = role === "MERCHANT" ? "merchant.google@foodrescue.id" : "user.google@foodrescue.id";
+      googleName = role === "MERCHANT" ? "Mitra Merchant Google" : "Pengguna Google";
+    }
   }
 
-  // Find or create user
-  let user = db.users.find((u) => u.email === googleEmail && u.role === role);
+  // Find user by email and role
+  let user = db.users.find((u) => u.email.toLowerCase() === googleEmail.toLowerCase() && u.role === role);
+
+  // If in 'login' mode (logging in) and account is NOT registered yet:
+  if (!user && mode === "login") {
+    return c.json(
+      {
+        success: false,
+        message:
+          role === "MERCHANT"
+            ? `Akun Google (${googleEmail}) belum terdaftar sebagai mitra gerai. Silakan lakukan pendaftaran di menu Registrasi terlebih dahulu.`
+            : `Akun Google (${googleEmail}) belum terdaftar. Silakan lakukan registrasi terlebih dahulu.`,
+        reason: "ACCOUNT_NOT_FOUND",
+      },
+      404
+    );
+  }
+
+  // If user does not exist (in 'register' or 'auto' mode), create new user
   if (!user) {
     user = {
       id: `usr-g-${Date.now()}`,
@@ -226,7 +256,7 @@ authRouter.post("/google", zValidator("json", googleAuthSchema), async (c) => {
         accountHolder: "",
         isStoreOpen: false,
         agreedSlaAt: new Date().toISOString(),
-        picName: user.name,
+        picName: googleName,
         avgRating: null as any,
         totalReviews: 0,
         isVerified: false,

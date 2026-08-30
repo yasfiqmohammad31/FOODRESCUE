@@ -104,7 +104,11 @@ export default function MerchantRegisterPage() {
                 try {
                   const res = await fetchMerchantApi("/api/auth/google", {
                     method: "POST",
-                    body: JSON.stringify({ idToken: response.credential, role: "MERCHANT" }),
+                    body: JSON.stringify({
+                      idToken: response.credential,
+                      role: "MERCHANT",
+                      mode: "register",
+                    }),
                   });
                   if (res.success && res.token) {
                     localStorage.setItem("fr_merchant_token", res.token);

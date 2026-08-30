@@ -100,7 +100,7 @@ export default function ConsumerLoginPage() {
               if (response.credential) {
                 setIsGoogleLoading(true);
                 try {
-                  const res = await consumerApi.googleAuth(response.credential, "CONSUMER");
+                  const res = await consumerApi.googleAuth(response.credential, "CONSUMER", "login");
                   if (res.success && res.token) {
                     localStorage.setItem("fr_token", res.token);
                     if (res.user) {
@@ -108,10 +108,10 @@ export default function ConsumerLoginPage() {
                     }
                     router.push("/feed");
                   } else {
-                    setErrors({ identifier: res.message || "Autentikasi Google gagal" });
+                    setErrors({ identifier: res.message || "Akun Google ini belum terdaftar. Silakan registrasi terlebih dahulu." });
                   }
-                } catch {
-                  router.push("/feed");
+                } catch (e: any) {
+                  setErrors({ identifier: e.message || "Gagal memproses autentikasi Google." });
                 } finally {
                   setIsGoogleLoading(false);
                 }

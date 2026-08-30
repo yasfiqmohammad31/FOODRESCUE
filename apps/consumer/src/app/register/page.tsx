@@ -107,7 +107,7 @@ export default function ConsumerRegisterPage() {
               if (response.credential) {
                 setIsGoogleLoading(true);
                 try {
-                  const res = await consumerApi.googleAuth(response.credential, "CONSUMER");
+                  const res = await consumerApi.googleAuth(response.credential, "CONSUMER", "register");
                   if (res.success && res.token) {
                     localStorage.setItem("fr_token", res.token);
                     if (res.user) {

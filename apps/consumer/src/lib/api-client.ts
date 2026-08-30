@@ -181,10 +181,10 @@ export const consumerApi = {
     });
   },
 
-  async googleAuth(idToken: string, role: string = "CONSUMER") {
+  async googleAuth(idToken: string, role: string = "CONSUMER", mode: "login" | "register" | "auto" = "auto") {
     return fetchApi("/api/auth/google", {
       method: "POST",
-      body: JSON.stringify({ idToken, role }),
+      body: JSON.stringify({ idToken, role, mode }),
     });
   },
 

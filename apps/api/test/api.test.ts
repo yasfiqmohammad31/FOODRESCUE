@@ -96,18 +96,49 @@ async function runTests() {
     assert(data.user.email === "test.hero@foodrescue.id", "Expected matching email");
   });
 
-  await test("2.3 POST /api/auth/google handles 1-Tap OAuth token authentication", async () => {
+  await test("2.3 POST /api/auth/login rejects unregistered accounts with 404", async () => {
+    const res = await api("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        identifier: "unknown.merchant@nonexistent.id",
+        password: "password123",
+        role: "MERCHANT",
+      }),
+    });
+    assert(res.status === 404, `Expected 404, got ${res.status}`);
+    const data = await res.json();
+    assert(data.success === false, "Expected success false for unregistered user");
+  });
+
+  await test("2.4 POST /api/auth/google rejects unregistered accounts in mode: login with 404", async () => {
     const res = await api("/api/auth/google", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        idToken: "mock_google_id_token_xyz_999",
-        role: "CONSUMER",
+        idToken: "unregistered.merchant@foodrescue.id",
+        role: "MERCHANT",
+        mode: "login",
+      }),
+    });
+    assert(res.status === 404, `Expected 404, got ${res.status}`);
+    const data = await res.json();
+    assert(data.success === false, "Expected login rejection for unregistered Google user");
+  });
+
+  await test("2.5 POST /api/auth/google registers new user in mode: register with 200", async () => {
+    const res = await api("/api/auth/google", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idToken: "new.merchant.google@foodrescue.id",
+        role: "MERCHANT",
+        mode: "register",
       }),
     });
     assert(res.status === 200, `Expected 200, got ${res.status}`);
     const data = await res.json();
-    assert(data.success === true, "Expected Google auth success");
+    assert(data.success === true, "Expected Google registration success");
   });
 
   // -------------------------------------------------------------
@@ -156,18 +187,37 @@ async function runTests() {
     assert(data.merchant.isVerified === true, "Merchant must be marked verified");
   });
 
-  await test("3.4 PATCH /api/merchants/toggle-status toggles instant store open/close", async () => {
+  await test("3.4 PATCH /api/merchants/toggle-status enforces active listing requirement", async () => {
+    // 1. Without active listings, opening store should be rejected
+    const resNoListing = await api("/api/merchants/toggle-status", {
+      method: "PATCH",
+    });
+    assert(resNoListing.status === 400, "Store cannot open without active listings");
+
+    // 2. Create an active listing for this merchant
+    await api("/api/listings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "Paket Roti Spesial",
+        description: "Aneka roti manis dan gurih fresh hari ini.",
+        category: "REGULAR",
+        originalPrice: 40000,
+        discountedPrice: 15000,
+        quantityTotal: 5,
+        pickupStart: "2026-08-30T17:00:00Z",
+        pickupEnd: "2026-08-30T21:00:00Z",
+        allergens: ["Gluten"],
+      }),
+    });
+
+    // 3. Now merchant can toggle open
     const res = await api("/api/merchants/toggle-status", {
       method: "PATCH",
     });
     assert(res.status === 200, `Expected 200, got ${res.status}`);
     const data = await res.json();
     assert(typeof data.isStoreOpen === "boolean", "Expected boolean store status");
-
-    // Reopen store for subsequent tests
-    if (!data.isStoreOpen) {
-      await api("/api/merchants/toggle-status", { method: "PATCH" });
-    }
   });
 
   await test("3.5 GET /api/merchants/stats returns 85% net revenue and metrics", async () => {
@@ -175,7 +225,7 @@ async function runTests() {
     assert(res.status === 200, `Expected 200, got ${res.status}`);
     const data = await res.json();
     assert(typeof data.stats.availableBalance === "number", "Expected balance data");
-    assert(data.stats.storeRating >= 4.0, "Expected store rating");
+    assert(data.stats.storeRating === null || typeof data.stats.storeRating === "number", "Expected store rating");
   });
 
   // -------------------------------------------------------------

@@ -110,16 +110,34 @@ listingsRouter.post("/", zValidator("json", createListingSchema), (c) => {
     }, 400);
   }
 
-  const merchant = db.merchants[0] || {
-    id: "mer-01",
-    storeName: "Artisan Bakery & Cafe",
-    address: "Jl. Raya Darmo Permai No. 45, Surabaya",
-    location: { lat: -7.2856, lng: 112.6954 },
-    avgRating: 5.0,
-    isVerified: true,
-  };
+  const authHeader = c.req.header("authorization") || "";
+  const xUserId = c.req.header("x-user-id") || c.req.query("userId") || c.req.query("merchantId");
+  let merchant = db.merchants.find((m) => m.userId === xUserId || m.id === xUserId);
+
+  if (!merchant && authHeader.startsWith("Bearer ")) {
+    try {
+      const parts = authHeader.slice(7).split(".");
+      if (parts.length >= 2) {
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+        if (payload.sub) {
+          merchant = db.merchants.find((m) => m.userId === payload.sub || m.id === payload.sub);
+        }
+      }
+    } catch {}
+  }
+
+  if (!merchant) {
+    merchant = db.merchants.length > 0 ? db.merchants[db.merchants.length - 1] : ({
+      id: "mer-01",
+      storeName: "Artisan Bakery & Cafe",
+      address: "Jl. Raya Darmo Permai No. 45, Surabaya",
+      location: { lat: -7.2856, lng: 112.6954 },
+      avgRating: 5.0,
+      isVerified: true,
+    } as any);
+  }
   const newListing: Listing = {
-    id: `lst-${Date.now().toString().slice(-6)}`,
+    id: `lst-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`,
     merchantId: merchant.id,
     title: sanitizeText(body.title),
     description: sanitizeText(body.description),
