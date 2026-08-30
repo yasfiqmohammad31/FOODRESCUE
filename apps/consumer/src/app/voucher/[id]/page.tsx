@@ -295,7 +295,9 @@ export default function VoucherPage({ params }: VoucherPageProps) {
           <div className="mt-3 pt-3 border-t border-border flex gap-2">
             <a
               href={
-                order.merchant.location?.lat && order.merchant.location?.lng
+                order.merchant.mapsUrl
+                  ? order.merchant.mapsUrl
+                  : order.merchant.location?.lat && order.merchant.location?.lng
                   ? `https://www.google.com/maps/dir/?api=1&destination=${order.merchant.location.lat},${order.merchant.location.lng}`
                   : `https://maps.google.com/?q=${encodeURIComponent(order.merchant.address)}`
               }

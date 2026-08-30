@@ -112,3 +112,58 @@ export function getInitials(name: string): string {
 export function pluralize(count: number, singular: string): string {
   return `${count} ${singular}`;
 }
+
+/**
+ * Ekstraksi koordinat Latitude dan Longitude dari berbagai format link/URL Google Maps
+ * Mendukung format:
+ * - URL lengkap: https://www.google.com/maps/place/.../@-7.285612,112.695412,17z/...
+ * - Query URL: https://maps.google.com/?q=-7.285612,112.695412
+ * - Embed Data URL: ...!3d-7.285612!4d112.695412...
+ * - String koordinat mentah: "-7.285612, 112.695412"
+ */
+export function extractCoordinatesFromMapsUrl(urlOrText: string): { lat: number; lng: number } | null {
+  if (!urlOrText || typeof urlOrText !== "string") return null;
+  const text = urlOrText.trim();
+
+  // 1. Format @lat,lng e.g. /@ -7.285612,112.695412,17z
+  const atMatch = text.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  if (atMatch) {
+    const lat = parseFloat(atMatch[1]);
+    const lng = parseFloat(atMatch[2]);
+    if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      return { lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)) };
+    }
+  }
+
+  // 2. Format query parameter q=lat,lng / query=lat,lng / ll=lat,lng / destination=lat,lng
+  const paramMatch = text.match(/[?&](?:q|query|ll|destination|daddr)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i);
+  if (paramMatch) {
+    const lat = parseFloat(paramMatch[1]);
+    const lng = parseFloat(paramMatch[2]);
+    if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      return { lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)) };
+    }
+  }
+
+  // 3. Format string koordinat mentah e.g. "-7.285612, 112.695412"
+  const rawMatch = text.match(/^(-?\d+(?:\.\d+)?)[,\s]+(-?\d+(?:\.\d+)?)$/);
+  if (rawMatch) {
+    const lat = parseFloat(rawMatch[1]);
+    const lng = parseFloat(rawMatch[2]);
+    if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      return { lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)) };
+    }
+  }
+
+  // 4. Format data parameter !3dlat!4dlng
+  const dataMatch = text.match(/!3d(-?\d+(?:\.\d+)?)[^!]*!4d(-?\d+(?:\.\d+)?)/);
+  if (dataMatch) {
+    const lat = parseFloat(dataMatch[1]);
+    const lng = parseFloat(dataMatch[2]);
+    if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      return { lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)) };
+    }
+  }
+
+  return null;
+}

@@ -25,6 +25,7 @@ export interface MerchantProfile {
   storeName: string;
   description: string | null;
   address: string;
+  mapsUrl?: string;
   location: { lat: number; lng: number };
   operatingHours: string[];
   avgRating: number;
@@ -41,7 +42,7 @@ export type ListingStatus = "ACTIVE" | "SOLD_OUT" | "EXPIRED" | "CANCELLED";
 export interface Listing {
   id: string;
   merchantId: string;
-  merchant: Pick<MerchantProfile, "storeName" | "avgRating" | "address" | "location" | "isVerified">;
+  merchant: Pick<MerchantProfile, "storeName" | "avgRating" | "address" | "location" | "isVerified" | "mapsUrl">;
   title: string;
   description: string | null;
   category: ListingCategory;
@@ -83,7 +84,7 @@ export interface Order {
   listingId: string;
   merchantId: string;
   listing: Pick<Listing, "title" | "photoUrl" | "category">;
-  merchant: Pick<MerchantProfile, "storeName" | "address" | "location">;
+  merchant: Pick<MerchantProfile, "storeName" | "address" | "location" | "mapsUrl">;
   quantity: number;
   totalPrice: number;
   paymentMethod: PaymentMethod;

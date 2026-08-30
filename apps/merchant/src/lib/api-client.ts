@@ -91,6 +91,7 @@ export const merchantApi = {
     storeName?: string;
     category?: string;
     address?: string;
+    mapsUrl?: string;
     location?: { lat: number; lng: number };
     businessPhone?: string;
     openTime?: string;
@@ -113,6 +114,7 @@ export const merchantApi = {
     category: string;
     businessPhone: string;
     address: string;
+    mapsUrl?: string;
     location?: { lat: number; lng: number };
     openTime: string;
     closeTime: string;

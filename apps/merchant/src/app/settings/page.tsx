@@ -7,9 +7,12 @@ import {
   AlertCircle,
   Building,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Clock,
   CreditCard,
   ExternalLink,
+  Link2,
   LocateFixed,
   LogOut,
   MapPin,
@@ -21,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { extractCoordinatesFromMapsUrl } from "@/lib/utils";
 import { merchantApi } from "@/lib/api-client";
 
 export default function MerchantSettingsPage() {
@@ -38,6 +42,8 @@ export default function MerchantSettingsPage() {
   ]);
   const [category, setCategory] = useState("Bakery & Pastry");
   const [address, setAddress] = useState("");
+  const [mapsUrl, setMapsUrl] = useState("");
+  const [showAdvancedCoords, setShowAdvancedCoords] = useState(false);
   const [lat, setLat] = useState<number>(-7.2856);
   const [lng, setLng] = useState<number>(112.6954);
   const [isLocating, setIsLocating] = useState(false);
@@ -82,6 +88,7 @@ export default function MerchantSettingsPage() {
         setStoreName(res.merchant.storeName || user?.storeName || "");
         setCategory(res.merchant.category || user?.category || "Bakery & Pastry");
         setAddress(res.merchant.address || "");
+        if (res.merchant.mapsUrl) setMapsUrl(res.merchant.mapsUrl);
         if (res.merchant.location?.lat) setLat(res.merchant.location.lat);
         if (res.merchant.location?.lng) setLng(res.merchant.location.lng);
         setOpenTime(res.merchant.openTime || "08:00");
@@ -99,6 +106,26 @@ export default function MerchantSettingsPage() {
       isMounted = false;
     };
   }, []);
+
+  const handleMapsUrlChange = (val: string) => {
+    setMapsUrl(val);
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.location;
+      delete next.mapsUrl;
+      return next;
+    });
+
+    if (!val.trim()) return;
+
+    const coords = extractCoordinatesFromMapsUrl(val);
+    if (coords) {
+      setLat(coords.lat);
+      setLng(coords.lng);
+      setGpsSuccess(`Koordinat GPS terdeteksi otomatis dari link: ${coords.lat}, ${coords.lng}`);
+      setTimeout(() => setGpsSuccess(null), 5000);
+    }
+  };
 
   const handleGetGPS = () => {
     if (typeof window === "undefined" || !navigator.geolocation) {
@@ -119,8 +146,13 @@ export default function MerchantSettingsPage() {
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setLat(Number(pos.coords.latitude.toFixed(6)));
-        setLng(Number(pos.coords.longitude.toFixed(6)));
+        const newLat = Number(pos.coords.latitude.toFixed(6));
+        const newLng = Number(pos.coords.longitude.toFixed(6));
+        setLat(newLat);
+        setLng(newLng);
+        if (!mapsUrl) {
+          setMapsUrl(`https://maps.google.com/?q=${newLat},${newLng}`);
+        }
         setIsLocating(false);
         setGpsSuccess(`Titik koordinat berhasil diperbarui (Akurasi: ±${Math.round(pos.coords.accuracy)} meter).`);
         setTimeout(() => setGpsSuccess(null), 4000);
@@ -129,7 +161,7 @@ export default function MerchantSettingsPage() {
         setIsLocating(false);
         setErrors((prev) => ({
           ...prev,
-          location: `Gagal membaca GPS: ${err.message}. Anda dapat mengisi angka Latitude & Longitude manual.`,
+          location: `Gagal membaca GPS: ${err.message}. Anda dapat mengisi link Google Maps atau angka Latitude & Longitude.`,
         }));
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -203,6 +235,7 @@ export default function MerchantSettingsPage() {
         storeName,
         category,
         address,
+        mapsUrl: mapsUrl.trim() || undefined,
         location: { lat: Number(lat), lng: Number(lng) },
         openTime,
         closeTime,
@@ -361,25 +394,49 @@ export default function MerchantSettingsPage() {
             </div>
 
             {/* Titik Lokasi Peta / GPS Restoran */}
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-primary text-xs font-bold">
                   <MapPin className="h-4 w-4 shrink-0" />
-                  <span>Titik GPS & Navigasi Google Maps</span>
+                  <span>Titik Lokasi & Google Maps Gerai</span>
                 </div>
                 <button
                   type="button"
                   onClick={handleGetGPS}
                   disabled={isLocating}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-[11px] font-bold shadow-2xs hover:bg-primary/90 transition disabled:opacity-50"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold shadow-2xs hover:bg-primary/90 transition disabled:opacity-50"
                 >
-                  <LocateFixed className={`h-3.5 w-3.5 ${isLocating ? "animate-spin" : ""}`} />
+                  <LocateFixed className={`h-3 w-3 ${isLocating ? "animate-spin" : ""}`} />
                   <span>{isLocating ? "Mencari GPS..." : "Perbarui via GPS"}</span>
                 </button>
               </div>
 
+              {/* Input Link Google Maps (Utama & Praktis) */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-foreground">
+                    Link / Tautan Google Maps (Paling Mudah)
+                  </label>
+                  <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                    Rekomendasi
+                  </span>
+                </div>
+                <div className="relative">
+                  <Input
+                    value={mapsUrl}
+                    onChange={(e) => handleMapsUrlChange(e.target.value)}
+                    placeholder="Tempel link Google Maps (misal: https://maps.app.goo.gl/...)"
+                    className="h-9 text-xs pl-8 rounded-xl bg-card border-primary/30 focus:border-primary"
+                  />
+                  <Link2 className="h-3.5 w-3.5 text-primary absolute left-2.5 top-1/2 -translate-y-1/2" />
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-normal">
+                  💡 <strong>Cara dapat link:</strong> Buka Google Maps di HP &gt; Cari nama gerai Anda &gt; Klik <strong>Bagikan (Share)</strong> &gt; Pilih <strong>Salin Link</strong> &gt; Tempel di sini.
+                </p>
+              </div>
+
               {gpsSuccess && (
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-100/80 p-1.5 rounded-lg">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-100/90 p-2 rounded-xl border border-emerald-200 animate-in fade-in">
                   <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
                   <span>{gpsSuccess}</span>
                 </div>
@@ -391,44 +448,64 @@ export default function MerchantSettingsPage() {
                 </span>
               )}
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
-                    Latitude
-                  </label>
-                  <Input
-                    type="number"
-                    step="any"
-                    value={lat}
-                    onChange={(e) => setLat(parseFloat(e.target.value) || 0)}
-                    required
-                    className="h-8 text-xs font-mono bg-card"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
-                    Longitude
-                  </label>
-                  <Input
-                    type="number"
-                    step="any"
-                    value={lng}
-                    onChange={(e) => setLng(parseFloat(e.target.value) || 0)}
-                    required
-                    className="h-8 text-xs font-mono bg-card"
-                  />
-                </div>
+              {/* Collapsible Manual Coordinates Helper */}
+              <div className="pt-1 border-t border-primary/10">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedCoords(!showAdvancedCoords)}
+                  className="flex items-center justify-between w-full text-[10px] font-bold text-muted-foreground hover:text-foreground py-0.5"
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Koordinat Titik Presisi: {lat}, {lng}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5 text-primary">
+                    <span>{showAdvancedCoords ? "Sembunyikan" : "Atur / Tinjau Manual"}</span>
+                    {showAdvancedCoords ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  </div>
+                </button>
+
+                {showAdvancedCoords && (
+                  <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-border/50 animate-in fade-in">
+                    <div>
+                      <label className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
+                        Latitude
+                      </label>
+                      <Input
+                        type="number"
+                        step="any"
+                        value={lat}
+                        onChange={(e) => setLat(parseFloat(e.target.value) || 0)}
+                        required
+                        className="h-8 text-xs font-mono bg-card"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
+                        Longitude
+                      </label>
+                      <Input
+                        type="number"
+                        step="any"
+                        value={lng}
+                        onChange={(e) => setLng(parseFloat(e.target.value) || 0)}
+                        required
+                        className="h-8 text-xs font-mono bg-card"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between pt-0.5">
+              {/* Google Maps Preview Action */}
+              <div className="flex items-center justify-between pt-1 border-t border-primary/10">
                 <span className="text-[10px] text-muted-foreground">
-                  Digunakan untuk panduan rute Google Maps konsumen.
+                  Digunakan untuk rute navigasi konsumen saat ambil makanan.
                 </span>
                 <a
-                  href={`https://maps.google.com/?q=${lat},${lng}`}
+                  href={mapsUrl.trim() || `https://maps.google.com/?q=${lat},${lng}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[10px] font-bold text-primary hover:underline"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline shrink-0"
                 >
                   <span>Cek di Google Maps</span>
                   <ExternalLink className="h-3 w-3" />

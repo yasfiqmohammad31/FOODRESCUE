@@ -229,7 +229,9 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
 
             <a
               href={
-                listing.merchant.location?.lat && listing.merchant.location?.lng
+                listing.merchant.mapsUrl
+                  ? listing.merchant.mapsUrl
+                  : listing.merchant.location?.lat && listing.merchant.location?.lng
                   ? `https://www.google.com/maps/dir/?api=1&destination=${listing.merchant.location.lat},${listing.merchant.location.lng}`
                   : `https://maps.google.com/?q=${encodeURIComponent(listing.merchant.address)}`
               }

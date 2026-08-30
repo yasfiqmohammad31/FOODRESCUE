@@ -20,8 +20,9 @@ export const merchantsRouter = new Hono<{ Bindings: Env }>();
 const step1Schema = z.object({
   storeName: z.string().min(3),
   category: z.string().min(2),
-  businessPhone: z.string().min(10).max(15),
+  businessPhone: z.string().min(8),
   address: z.string().min(8),
+  mapsUrl: z.string().optional(),
   location: z
     .object({
       lat: z.number(),
@@ -48,6 +49,7 @@ const updateProfileSchema = z.object({
   storeName: z.string().min(3).optional(),
   category: z.string().optional(),
   address: z.string().optional(),
+  mapsUrl: z.string().optional(),
   location: z
     .object({
       lat: z.number(),
@@ -187,6 +189,7 @@ merchantsRouter.patch("/profile", zValidator("json", updateProfileSchema), (c) =
   if (body.storeName) merchant.storeName = sanitizeText(body.storeName);
   if (body.category) merchant.category = sanitizeText(body.category);
   if (body.address !== undefined) merchant.address = sanitizeText(body.address);
+  if (body.mapsUrl !== undefined) merchant.mapsUrl = body.mapsUrl ? sanitizeText(body.mapsUrl) : "";
   if (body.location && typeof body.location.lat === "number" && typeof body.location.lng === "number") {
     merchant.location = {
       lat: body.location.lat,
@@ -202,12 +205,13 @@ merchantsRouter.patch("/profile", zValidator("json", updateProfileSchema), (c) =
   if (body.accountHolder !== undefined) merchant.accountHolder = sanitizeText(body.accountHolder);
   if (body.isStoreOpen !== undefined) merchant.isStoreOpen = body.isStoreOpen;
 
-  // Propagate updated merchant info (storeName, address, location) to existing listings
+  // Propagate updated merchant info (storeName, address, location, mapsUrl) to existing listings
   db.listings.forEach((l) => {
     if (l.merchantId === merchant.id || l.merchantId === merchant.userId) {
       l.merchant.storeName = merchant.storeName;
       l.merchant.address = merchant.address;
       l.merchant.location = { ...merchant.location };
+      (l.merchant as any).mapsUrl = merchant.mapsUrl;
     }
   });
 
@@ -304,6 +308,7 @@ merchantsRouter.post("/onboarding/step-1", zValidator("json", step1Schema), (c) 
   merchant.category = body.category;
   merchant.businessPhone = body.businessPhone;
   merchant.address = sanitizeText(body.address);
+  if (body.mapsUrl !== undefined) merchant.mapsUrl = body.mapsUrl ? sanitizeText(body.mapsUrl) : "";
   if (body.location && typeof body.location.lat === "number" && typeof body.location.lng === "number") {
     merchant.location = {
       lat: body.location.lat,

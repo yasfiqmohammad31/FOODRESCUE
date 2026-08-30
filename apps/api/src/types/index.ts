@@ -33,6 +33,7 @@ export interface MerchantProfile {
   category: string;
   businessPhone: string;
   address: string;
+  mapsUrl?: string;
   location: {
     lat: number;
     lng: number;
