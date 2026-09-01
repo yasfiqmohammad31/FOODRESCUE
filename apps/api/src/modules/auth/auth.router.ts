@@ -3,6 +3,9 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { db } from "../../db/mock-db";
 import { signJwt, sanitizeText } from "../../utils/security";
+import { signJwtWithEnv } from "../../utils/security-enhanced";
+import { authRateLimiter } from "../../middleware/rate-limiter";
+import { logAuthSuccess, logAuthFailure } from "../../utils/audit-log";
 import { sendWhatsAppOtp, verifyWhatsAppOtp } from "./whatsapp-otp.service";
 import type { Env, User } from "../../types";
 
@@ -45,8 +48,8 @@ const updateProfileSchema = z.object({
   phone: z.string().optional(),
 });
 
-// POST /auth/login
-authRouter.post("/login", zValidator("json", loginSchema), async (c) => {
+// POST /auth/login with rate limiting
+authRouter.post("/login", authRateLimiter, zValidator("json", loginSchema), async (c) => {
   const { identifier, role } = c.req.valid("json");
   const cleanIdentifier = identifier.trim().toLowerCase();
 
@@ -57,6 +60,7 @@ authRouter.post("/login", zValidator("json", loginSchema), async (c) => {
   );
 
   if (!user) {
+    logAuthFailure("ACCOUNT_NOT_FOUND", cleanIdentifier, c);
     return c.json(
       {
         success: false,
@@ -76,22 +80,26 @@ authRouter.post("/login", zValidator("json", loginSchema), async (c) => {
     storeName = merchant?.storeName || (user as any).storeName || user.name;
   }
 
-  const secret = c.env.JWT_ACCESS_SECRET || "foodrescue_jwt_secret";
-  const token = await signJwt(
-    { sub: user.id, role: user.role, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 },
-    secret
+  // Use enhanced JWT signing with environment configuration
+  const { token, expiresAt } = await signJwtWithEnv(
+    { sub: user.id, role: user.role, email: user.email },
+    c.env,
+    { expiresInSeconds: 24 * 60 * 60 } // 24 hours
   );
+
+  logAuthSuccess(user.id, user.role, c);
 
   return c.json({
     success: true,
     message: "Login berhasil",
     token,
+    expiresAt: expiresAt.toISOString(),
     user: { ...user, ...(storeName ? { storeName } : {}) },
   });
 });
 
-// POST /auth/register
-authRouter.post("/register", zValidator("json", registerSchema), async (c) => {
+// POST /auth/register with rate limiting
+authRouter.post("/register", authRateLimiter, zValidator("json", registerSchema), async (c) => {
   const body = c.req.valid("json");
 
   const chosenStoreName = sanitizeText(body.storeName || body.name || "Mitra Gerai");
@@ -146,16 +154,20 @@ authRouter.post("/register", zValidator("json", registerSchema), async (c) => {
     });
   }
 
-  const secret = c.env.JWT_ACCESS_SECRET || "foodrescue_jwt_secret";
-  const token = await signJwt(
-    { sub: newUser.id, role: newUser.role, email: newUser.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 },
-    secret
+  // Use enhanced JWT signing with environment configuration
+  const { token, expiresAt } = await signJwtWithEnv(
+    { sub: newUser.id, role: newUser.role, email: newUser.email },
+    c.env,
+    { expiresInSeconds: 24 * 60 * 60 } // 24 hours
   );
+
+  logAuthSuccess(newUser.id, newUser.role, c);
 
   return c.json({
     success: true,
     message: "Registrasi akun berhasil",
     token,
+    expiresAt: expiresAt.toISOString(),
     user: {
       ...newUser,
       ...(body.role === "MERCHANT" ? { storeName: chosenStoreName } : {}),
@@ -201,6 +213,7 @@ authRouter.post("/google", zValidator("json", googleAuthSchema), async (c) => {
 
   // If in 'login' mode (logging in) and account is NOT registered yet:
   if (!user && mode === "login") {
+    logAuthFailure("GOOGLE_ACCOUNT_NOT_FOUND", googleEmail, c);
     return c.json(
       {
         success: false,
@@ -271,22 +284,26 @@ authRouter.post("/google", zValidator("json", googleAuthSchema), async (c) => {
     storeName = merchant?.storeName || (user as any).storeName || user.name;
   }
 
-  const secret = c.env.JWT_ACCESS_SECRET || "foodrescue_jwt_secret";
-  const token = await signJwt(
-    { sub: user.id, role: user.role, email: user.email, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 },
-    secret
+  // Use enhanced JWT signing with environment configuration
+  const { token, expiresAt } = await signJwtWithEnv(
+    { sub: user.id, role: user.role, email: user.email },
+    c.env,
+    { expiresInSeconds: 24 * 60 * 60 } // 24 hours
   );
+
+  logAuthSuccess(user.id, user.role, c);
 
   return c.json({
     success: true,
     message: "Autentikasi Google berhasil",
     token,
+    expiresAt: expiresAt.toISOString(),
     user: { ...user, ...(storeName ? { storeName } : {}) },
   });
 });
 
-// POST /auth/otp/send
-authRouter.post("/otp/send", zValidator("json", sendOtpSchema), async (c) => {
+// POST /auth/otp/send with rate limiting
+authRouter.post("/otp/send", authRateLimiter, zValidator("json", sendOtpSchema), async (c) => {
   const { phone } = c.req.valid("json");
   const result = await sendWhatsAppOtp(c.env, phone);
   if (!result.success) {
