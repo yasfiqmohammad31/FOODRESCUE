@@ -2,9 +2,16 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { db } from "../../db/mock-db";
+import { authenticate, requireRole } from "../../middleware/auth.middleware";
+import { webhookRateLimiter } from "../../middleware/rate-limiter";
+import { logWebhookEvent } from "../../utils/audit-log";
 import type { Env, Payment } from "../../types";
 
 export const paymentsRouter = new Hono<{ Bindings: Env }>();
+
+// Apply authentication to payment routes (except webhook)
+paymentsRouter.use("/create-invoice", authenticate());
+paymentsRouter.use("/create-invoice", requireRole("CONSUMER", "ADMIN"));
 
 const createInvoiceSchema = z.object({
   orderId: z.string(),
@@ -95,17 +102,67 @@ paymentsRouter.post("/create-invoice", zValidator("json", createInvoiceSchema), 
 });
 
 // POST /payments/webhook (Xendit Callback Signature Verification & Order Confirmation)
-paymentsRouter.post("/webhook", async (c) => {
+paymentsRouter.post("/webhook", webhookRateLimiter, async (c) => {
   const callbackToken = c.req.header("x-callback-token");
+  const signature = c.req.header("x-xendit-signature");
   const expectedToken = c.env.XENDIT_CALLBACK_TOKEN;
-
-  if (expectedToken && callbackToken && callbackToken !== expectedToken && c.env.ENVIRONMENT === "production") {
-    return c.json({ success: false, message: "Unauthorized webhook token signature" }, 401);
-  }
-
+  const webhookSecret = c.env.XENDIT_WEBHOOK_SECRET;
+  
+  // Get raw body for signature verification
+  const rawBody = await c.req.text();
   const payload: any = await c.req.json().catch(() => ({}));
   const externalId = payload.external_id || payload.id;
   const rawStatus = (payload.status || "").toUpperCase();
+
+  // Enhanced webhook security
+  let isValid = false;
+  
+  if (webhookSecret && signature) {
+    // Verify signature with HMAC
+    try {
+      const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(webhookSecret),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["verify"]
+      );
+      
+      const signatureBytes = Uint8Array.from(
+        atob(signature.replace(/-/g, "+").replace(/_/g, "/")),
+        c => c.charCodeAt(0)
+      );
+      
+      const data = new TextEncoder().encode(rawBody);
+      isValid = await crypto.subtle.verify(
+        "HMAC",
+        key,
+        signatureBytes,
+        data
+      );
+      
+      if (!isValid) {
+        logWebhookEvent("invalid", c, { reason: "invalid_signature", externalId });
+        return c.json({ 
+          success: false, 
+          message: "Invalid webhook signature" 
+        }, 401);
+      }
+    } catch (error) {
+      console.error("[Webhook] Signature verification error:", error);
+    }
+  }
+  
+  // Fallback to callback token verification
+  if (!isValid && expectedToken && callbackToken && callbackToken !== expectedToken) {
+    logWebhookEvent("invalid", c, { reason: "invalid_token", externalId });
+    return c.json({ 
+      success: false, 
+      message: "Unauthorized webhook token" 
+    }, 401);
+  }
+  
+  logWebhookEvent("received", c, { externalId, status: rawStatus });
 
   if (externalId) {
     const order = db.orders.find((o) => o.id === externalId || o.orderNumber === externalId);

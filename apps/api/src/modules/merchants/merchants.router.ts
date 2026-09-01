@@ -3,7 +3,10 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { db } from "../../db/mock-db";
 import { sanitizeText, sanitizeUrl } from "../../utils/security";
+import { authenticate, requireRole } from "../../middleware/auth.middleware";
 import type { Env, MerchantProfile } from "../../types";
+
+import { getMerchantForContext } from "../../utils/merchant-context";
 
 export const MERCHANT_CATEGORIES = [
   "Bakery & Pastry",
@@ -16,6 +19,21 @@ export const MERCHANT_CATEGORIES = [
 ] as const;
 
 export const merchantsRouter = new Hono<{ Bindings: Env }>();
+
+// Apply authentication to merchant routes
+merchantsRouter.use("/*", authenticate());
+merchantsRouter.use("/profile", requireRole("MERCHANT", "ADMIN"));
+merchantsRouter.use("/stats", requireRole("MERCHANT", "ADMIN"));
+merchantsRouter.use("/toggle-status", requireRole("MERCHANT", "ADMIN"));
+merchantsRouter.use("/onboarding/*", requireRole("MERCHANT", "ADMIN"));
+
+// Public routes (no authentication required)
+merchantsRouter.get("/categories", (c) => {
+  return c.json({
+    success: true,
+    categories: MERCHANT_CATEGORIES,
+  });
+});
 
 const step1Schema = z.object({
   storeName: z.string().min(3),
@@ -74,126 +92,29 @@ merchantsRouter.get("/categories", (c) => {
   });
 });
 
-export function getMerchantForContext(c: any): MerchantProfile {
-  const authHeader = c.req.header("authorization") || "";
-  const xUserId = c.req.header("x-user-id") || c.req.header("x-merchant-id") || c.req.query("userId") || c.req.query("merchantId");
-
-  if (xUserId) {
-    const found = db.merchants.find((m) => m.userId === xUserId || m.id === xUserId);
-    if (found) return found;
-
-    // Check if user exists with this ID
-    const user = db.users.find((u) => u.id === xUserId);
-    if (user) {
-      const newM: MerchantProfile = {
-        id: `mer-${user.id}`,
-        userId: user.id,
-        storeName: (user as any).storeName || user.name || "Mitra Gerai",
-        category: (user as any).category || "Bakery & Pastry",
-        businessPhone: user.phone || "",
-        address: "",
-        mapsUrl: "",
-        location: { lat: -7.2856, lng: 112.6954 },
-        openTime: "08:00",
-        closeTime: "21:00",
-        bankName: "BCA",
-        accountNumber: "",
-        accountHolder: "",
-        isStoreOpen: false,
-        agreedSlaAt: new Date().toISOString(),
-        picName: user.name || "Pemilik Gerai",
-        avgRating: null as any,
-        totalReviews: 0,
-        isVerified: false,
-        createdAt: new Date().toISOString(),
-      };
-      db.merchants.push(newM);
-      return newM;
-    }
-  }
-
-  if (authHeader.startsWith("Bearer ")) {
-    try {
-      const token = authHeader.slice(7);
-      const parts = token.split(".");
-      if (parts.length >= 2) {
-        const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
-        if (payload.sub) {
-          const found = db.merchants.find((m) => m.userId === payload.sub || m.id === payload.sub);
-          if (found) return found;
-
-          const user = db.users.find((u) => u.id === payload.sub);
-          if (user) {
-            const newM: MerchantProfile = {
-              id: `mer-${user.id}`,
-              userId: user.id,
-              storeName: (user as any).storeName || user.name || "Mitra Gerai",
-              category: (user as any).category || "Bakery & Pastry",
-              businessPhone: user.phone || "",
-              address: "",
-              mapsUrl: "",
-              location: { lat: -7.2856, lng: 112.6954 },
-              openTime: "08:00",
-              closeTime: "21:00",
-              bankName: "BCA",
-              accountNumber: "",
-              accountHolder: "",
-              isStoreOpen: false,
-              agreedSlaAt: new Date().toISOString(),
-              picName: user.name || "Pemilik Gerai",
-              avgRating: null as any,
-              totalReviews: 0,
-              isVerified: false,
-              createdAt: new Date().toISOString(),
-            };
-            db.merchants.push(newM);
-            return newM;
-          }
-        }
-      }
-    } catch {}
-  }
-
-  if (db.merchants.length > 0) {
-    return db.merchants[db.merchants.length - 1];
-  }
-
-  const cleanFallback: MerchantProfile = {
-    id: `mer-${Date.now().toString().slice(-6)}`,
-    userId: `usr-${Date.now().toString().slice(-6)}`,
-    storeName: "Mitra Gerai",
-    category: "Bakery & Pastry",
-    businessPhone: "",
-    address: "",
-    mapsUrl: "",
-    location: { lat: -7.2856, lng: 112.6954 },
-    openTime: "08:00",
-    closeTime: "21:00",
-    bankName: "BCA",
-    accountNumber: "",
-    accountHolder: "",
-    isStoreOpen: false,
-    agreedSlaAt: new Date().toISOString(),
-    picName: "Mitra Gerai",
-    avgRating: null as any,
-    totalReviews: 0,
-    isVerified: false,
-    createdAt: new Date().toISOString(),
-  };
-  db.merchants.push(cleanFallback);
-  return cleanFallback;
-}
-
 // GET /merchants/profile
 merchantsRouter.get("/profile", (c) => {
   const merchant = getMerchantForContext(c);
   return c.json({ success: true, merchant });
 });
 
-// PATCH /merchants/profile
-merchantsRouter.patch("/profile", zValidator("json", updateProfileSchema), (c) => {
+// PATCH /merchants/profile - Merchant can only update their own profile
+merchantsRouter.patch("/profile", zValidator("json", updateProfileSchema), async (c) => {
   const body = c.req.valid("json");
   const merchant = getMerchantForContext(c);
+  
+  // Security: Don't allow changing ownership fields through profile update
+  const user = c.get("user");
+  if (user && user.role !== "ADMIN") {
+    // Check that the authenticated user owns this merchant profile
+    if (merchant.userId !== user.sub) {
+      return c.json({
+        success: false,
+        message: "Anda tidak memiliki izin untuk memperbarui profil gerai ini.",
+        code: "UNAUTHORIZED"
+      }, 403);
+    }
+  }
 
   // Validate active listing if merchant wants to open store
   if (body.isStoreOpen === true && !merchant.isStoreOpen) {

@@ -1,6 +1,9 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { securityHeaders } from "./middleware/security-headers";
+import { generalRateLimiter } from "./middleware/rate-limiter";
+import { validateEnv } from "./utils/env.validation";
 import { authRouter } from "./modules/auth/auth.router";
 import { merchantsRouter } from "./modules/merchants/merchants.router";
 import { listingsRouter } from "./modules/listings/listings.router";
@@ -20,23 +23,56 @@ const app = new Hono<{ Bindings: Env }>();
 // Logger & Performance Timing
 app.use("*", logger());
 
-// CORS Configuration
+// Security: Environment validation
+app.use("*", async (c, next) => {
+  const envValidation = validateEnv(c.env);
+  if (envValidation.errors.length > 0) {
+    console.error("[SECURITY] Environment validation failed:", envValidation.errors);
+    if (c.env.ENVIRONMENT === "production") {
+      return c.json({
+        success: false,
+        message: "Configuration keamanan tidak valid",
+        errors: envValidation.errors
+      }, 500);
+    }
+  }
+  if (envValidation.warnings.length > 0) {
+    console.warn("[SECURITY] Environment warnings:", envValidation.warnings);
+  }
+  await next();
+});
+
+// Security: Rate limiting for all endpoints
+app.use("*", generalRateLimiter);
+
+// Security: Enhanced CORS Configuration
 app.use(
   "*",
   cors({
     origin: (origin) => {
-      if (
-        !origin ||
-        origin.includes("localhost") ||
-        origin.includes("127.0.0.1") ||
-        origin.includes("vercel.app") ||
-        origin.includes("pages.dev") ||
-        origin.includes("foodrescue") ||
-        origin.includes("workers.dev")
-      ) {
-        return origin || "*";
+      // Define allowed origins
+      const allowedOrigins = [
+        "https://foodrescue-consumer.vercel.app",
+        "https://foodrescue-merchant.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:3001"
+      ];
+      
+      // Allow requests without origin (like mobile apps)
+      if (!origin) return origin;
+      
+      // Check if origin is allowed
+      if (allowedOrigins.includes(origin)) {
+        return origin;
       }
-      return origin;
+      
+      // Allow vercel.app subdomains in development
+      if (origin.endsWith(".vercel.app") || origin.endsWith(".pages.dev")) {
+        return origin;
+      }
+      
+      // Block others
+      return null;
     },
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: [
@@ -49,21 +85,21 @@ app.use(
       "x-merchant-id",
       "X-Merchant-Id",
       "x-app-version",
-      "X-App-Version",
+      "X-App-version",
       "Accept",
       "Origin",
+      "X-RateLimit-Limit",
+      "X-RateLimit-Remaining",
+      "X-RateLimit-Reset"
     ],
     credentials: true,
+    maxAge: 86400,
+    exposeHeaders: ["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"]
   })
 );
 
-// Security Headers Middleware
-app.use("*", async (c, next) => {
-  await next();
-  c.header("X-Content-Type-Options", "nosniff");
-  c.header("X-Frame-Options", "DENY");
-  c.header("Referrer-Policy", "strict-origin-when-cross-origin");
-});
+// Security: Security headers
+app.use("*", securityHeaders());
 
 // Root & Health Probe
 app.get("/", (c) => {
@@ -123,6 +159,15 @@ app.route("/api/impact", impactRouter);
 
 // Developer Database Reset Endpoint (100% Clean Slate)
 app.all("/api/dev/reset-db", (c) => {
+  // Restrict to development environment
+  if (c.env.ENVIRONMENT !== "development" && c.env.ENVIRONMENT !== "test") {
+    return c.json({
+      success: false,
+      message: "Endpoint ini hanya tersedia di environment development/test",
+      code: "ENDPOINT_DISABLED"
+    }, 403);
+  }
+  
   resetDbToEmpty();
   return c.json({
     success: true,
@@ -265,6 +310,15 @@ app.post("/api/notifications/test-push", async (c) => {
 
 // Testing & On-Demand Reset Helper Endpoints
 app.post("/api/testing/reset", (c) => {
+  // Restrict to development environment
+  if (c.env.ENVIRONMENT !== "development" && c.env.ENVIRONMENT !== "test") {
+    return c.json({
+      success: false,
+      message: "Endpoint ini hanya tersedia di environment development/test",
+      code: "ENDPOINT_DISABLED"
+    }, 403);
+  }
+  
   db.users = [];
   db.merchants = [];
   db.listings = [];
@@ -279,6 +333,15 @@ app.post("/api/testing/reset", (c) => {
 });
 
 app.post("/api/testing/seed", (c) => {
+  // Restrict to development environment
+  if (c.env.ENVIRONMENT !== "development" && c.env.ENVIRONMENT !== "test") {
+    return c.json({
+      success: false,
+      message: "Endpoint ini hanya tersedia di environment development/test",
+      code: "ENDPOINT_DISABLED"
+    }, 403);
+  }
+  
   return c.json({ success: true, message: "Database diinisialisasi." });
 });
 

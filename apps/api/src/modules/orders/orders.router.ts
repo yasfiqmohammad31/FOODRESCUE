@@ -3,10 +3,27 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { db } from "../../db/mock-db";
 import { sanitizeText } from "../../utils/security";
+import { authenticate, requireRole } from "../../middleware/auth.middleware";
 import { buildOrderConfirmationEmail, buildUndoRefundEmail, safeDispatch, sendEmail } from "../notifications/email.service";
+import { logAuthSuccess } from "../../utils/audit-log";
 import type { Env, Order, OrderStatus, PaymentMethod } from "../../types";
 
 export const ordersRouter = new Hono<{ Bindings: Env }>();
+
+// Apply authentication to all order routes
+ordersRouter.use("/*", authenticate());
+
+// Consumer-only routes
+const consumerRoutes = ["/", "/consumer/active"];
+consumerRoutes.forEach(route => {
+  ordersRouter.use(route, requireRole("CONSUMER"));
+});
+
+// Merchant-only routes
+const merchantRoutes = ["/merchant/queue"];
+merchantRoutes.forEach(route => {
+  ordersRouter.use(route, requireRole("MERCHANT", "ADMIN"));
+});
 
 const createOrderSchema = z.object({
   consumerId: z.string().default("usr-cns-001"),
@@ -133,8 +150,8 @@ ordersRouter.get("/:id", (c) => {
   return c.json({ success: true, order });
 });
 
-// GET /orders/consumer/active
-ordersRouter.get("/consumer/active", (c) => {
+// POST /orders/consumer/active
+ordersRouter.get("/consumer/active", requireRole("CONSUMER"), (c) => {
   const activeOrders = db.orders.filter(
     (o) => o.status === "UNDO_WINDOW" || o.status === "CONFIRMED" || o.status === "PREPARING" || o.status === "READY"
   );
@@ -142,23 +159,17 @@ ordersRouter.get("/consumer/active", (c) => {
 });
 
 // GET /orders/merchant/queue
-ordersRouter.get("/merchant/queue", (c) => {
-  const authHeader = c.req.header("authorization") || "";
-  const xUserId = c.req.header("x-user-id") || c.req.query("userId") || c.req.query("merchantId");
-
-  let targetMerchantId = xUserId;
-  if (!targetMerchantId && authHeader.startsWith("Bearer ")) {
-    try {
-      const token = authHeader.slice(7);
-      const parts = token.split(".");
-      if (parts.length >= 2) {
-        const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
-        if (payload.sub) {
-          const found = db.merchants.find((m) => m.userId === payload.sub || m.id === payload.sub);
-          if (found) targetMerchantId = found.id;
-        }
-      }
-    } catch {}
+ordersRouter.get("/merchant/queue", requireRole("MERCHANT", "ADMIN"), (c) => {
+  const user = c.get('user');
+  
+  let targetMerchantId = user?.sub;
+  if (user?.role === 'ADMIN' || !targetMerchantId) {
+    // Admin can see all orders, or fallback to first merchant
+    const merchant = db.merchants[0];
+    targetMerchantId = merchant?.id;
+  } else {
+    const found = db.merchants.find((m) => m.userId === targetMerchantId || m.id === targetMerchantId);
+    if (found) targetMerchantId = found.id;
   }
 
   if (targetMerchantId) {

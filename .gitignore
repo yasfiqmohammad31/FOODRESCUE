@@ -24,6 +24,9 @@ dist/
 .env.test.local
 .env.production.local
 *.local
+# Do NOT ignore .env.example files
+!.env.example
+!.env.example.*
 
 # Logs
 npm-debug.log*
