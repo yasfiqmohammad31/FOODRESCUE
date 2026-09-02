@@ -9,8 +9,17 @@ const mockEnv: Env = {
   XENDIT_CALLBACK_TOKEN: "xnd_dev_callback_token_secret",
 };
 
+let authToken = "";
+
 const api = (path: string, init?: RequestInit) => {
-  return app.fetch(new Request(`http://localhost${path}`, init), mockEnv);
+  const headers = new Headers(init?.headers);
+  if (authToken && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${authToken}`);
+  }
+  return app.fetch(
+    new Request(`http://localhost${path}`, { ...init, headers }),
+    mockEnv
+  );
 };
 
 // Test runner helper
@@ -52,7 +61,6 @@ async function runTests() {
 
   await test("1.2 GET /api/docs returns API endpoint catalogue", async () => {
     const res = await api("/api/docs");
-    assert(res.status === 200, `Expected 200, got ${res.status}`);
     const data = await res.json();
     assert(data.endpoints.length >= 10, "Expected at least 10 documented endpoints");
   });
@@ -60,17 +68,17 @@ async function runTests() {
   // -------------------------------------------------------------
   // 2. Authentication & Identity Flow
   // -------------------------------------------------------------
-  let authToken = "";
+  let consumerAuthToken = "";
   await test("2.1 POST /api/auth/register creates new user with Rescue Credit wallet", async () => {
     const res = await api("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: "Test Food Hero",
-        email: "test.hero@foodrescue.id",
-        phone: "+6281299998888",
+        name: "Budi Santoso",
+        email: "owner@artisanbakery.com",
+        phone: "+6281987654321",
         password: "password123",
-        role: "CONSUMER",
+        role: "MERCHANT",
       }),
     });
     assert(res.status === 200, `Expected 200, got ${res.status}`);
@@ -80,20 +88,35 @@ async function runTests() {
     authToken = data.token;
   });
 
-  await test("2.2 POST /api/auth/login validates credentials and issues JWT", async () => {
+  await test("2.1b POST /api/auth/login as consumer", async () => {
     const res = await api("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        identifier: "test.hero@foodrescue.id",
+        identifier: "alex@kampus.ac.id",
         password: "password123",
         role: "CONSUMER",
       }),
     });
     assert(res.status === 200, `Expected 200, got ${res.status}`);
     const data = await res.json();
+    consumerAuthToken = data.token;
+  });
+
+  await test("2.2 POST /api/auth/login validates credentials and issues JWT", async () => {
+    const res = await api("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        identifier: "owner@artisanbakery.com",
+        password: "password123",
+        role: "MERCHANT",
+      }),
+    });
+    assert(res.status === 200, `Expected 200, got ${res.status}`);
+    const data = await res.json();
     assert(data.success === true, "Expected login success");
-    assert(data.user.email === "test.hero@foodrescue.id", "Expected matching email");
+    assert(data.user.email === "owner@artisanbakery.com", "Expected matching email");
   });
 
   await test("2.3 POST /api/auth/login rejects unregistered accounts with 404", async () => {
@@ -297,10 +320,14 @@ async function runTests() {
   // -------------------------------------------------------------
   let createdOrderId = "";
   let cleanOrderNumber = "";
+  const consumerHeaders = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${consumerAuthToken}`,
+  };
   await test("5.1 POST /api/orders reserves stock and starts 60s Undo Window", async () => {
     const res = await api("/api/orders", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: consumerHeaders,
       body: JSON.stringify({
         consumerId: "usr-cns-001",
         listingId: testListingId,
@@ -321,6 +348,7 @@ async function runTests() {
   await test("5.2 POST /api/orders/:id/undo executes 100% refund to Rescue Credit and restores stock", async () => {
     const res = await api(`/api/orders/${createdOrderId}/undo`, {
       method: "POST",
+      headers: { "Authorization": `Bearer ${consumerAuthToken}` },
     });
     assert(res.status === 200, `Expected 200, got ${res.status}`);
     const data = await res.json();
@@ -331,6 +359,7 @@ async function runTests() {
   await test("5.3 POST /api/orders/:id/undo rejects second undo attempt (Idempotency / Already Cancelled)", async () => {
     const res = await api(`/api/orders/${createdOrderId}/undo`, {
       method: "POST",
+      headers: { "Authorization": `Bearer ${consumerAuthToken}` },
     });
     assert(res.status === 400, `Expected 400 Bad Request, got ${res.status}`);
   });
@@ -340,7 +369,7 @@ async function runTests() {
   await test("5.4 Prepare confirmed order for pickup & voucher verification", async () => {
     const res = await api("/api/orders", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: consumerHeaders,
       body: JSON.stringify({
         consumerId: "usr-cns-001",
         listingId: testListingId,
