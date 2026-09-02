@@ -150,7 +150,6 @@ merchantsRouter.patch("/profile", zValidator("json", updateProfileSchema), async
   if (body.businessPhone) merchant.businessPhone = body.businessPhone;
   if (body.openTime) merchant.openTime = body.openTime;
   if (body.closeTime) merchant.closeTime = body.closeTime;
-  if (body.operatingDays) merchant.operatingDays = body.operatingDays;
   if (body.bankName) merchant.bankName = body.bankName;
   if (body.accountNumber !== undefined) merchant.accountNumber = body.accountNumber.replace(/\D/g, "");
   if (body.accountHolder !== undefined) merchant.accountHolder = sanitizeText(body.accountHolder);
@@ -268,7 +267,6 @@ merchantsRouter.post("/onboarding/step-1", zValidator("json", step1Schema), (c) 
   }
   merchant.openTime = body.openTime;
   merchant.closeTime = body.closeTime;
-  if (body.operatingDays) merchant.operatingDays = body.operatingDays;
 
   return c.json({ success: true, message: "Identitas gerai dan titik lokasi tersimpan." });
 });

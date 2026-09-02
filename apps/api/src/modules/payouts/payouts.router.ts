@@ -3,6 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { db } from "../../db/mock-db";
 import { buildMerchantPayoutEmail, safeDispatch, sendEmail } from "../notifications/email.service";
+import { getMerchantForContext } from "../../utils/merchant-context";
 import type { Env, PayoutItem } from "../../types";
 
 export const payoutsRouter = new Hono<{ Bindings: Env }>();
@@ -19,9 +20,9 @@ payoutsRouter.get("/history", (c) => {
 // POST /payouts/withdraw
 payoutsRouter.post("/withdraw", zValidator("json", withdrawSchema), (c) => {
   const { amount } = c.req.valid("json");
-  const merchant = db.merchants[0];
+  const merchant = getMerchantForContext(c);
+  const availableBalance = 0;
 
-  const availableBalance = 1485000;
   if (amount > availableBalance) {
     return c.json({
       success: false,
@@ -39,8 +40,7 @@ payoutsRouter.post("/withdraw", zValidator("json", withdrawSchema), (c) => {
     id: `po-${Date.now().toString().slice(-6)}`,
     payoutNumber,
     merchantId: merchant.id,
-    amount,
-    netAmount,
+    amount: amount,
     platformFee: amount - netAmount,
     bankName: merchant.bankName,
     accountNumber: merchant.accountNumber,

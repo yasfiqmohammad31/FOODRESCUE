@@ -3,6 +3,7 @@ import type {
   MerchantProfile,
   Listing,
   Order,
+  Payment,
   PayoutItem,
   RescueCreditWallet,
   CreditTransaction,
@@ -15,6 +16,7 @@ export interface DatabaseStore {
   merchants: MerchantProfile[];
   listings: Listing[];
   orders: Order[];
+  payments: Payment[];
   payouts: PayoutItem[];
   wallets: Record<string, RescueCreditWallet>;
   transactions: CreditTransaction[];
@@ -28,6 +30,7 @@ export const db: DatabaseStore = {
   merchants: [],
   listings: [],
   orders: [],
+  payments: [],
   payouts: [],
   wallets: {},
   transactions: [],

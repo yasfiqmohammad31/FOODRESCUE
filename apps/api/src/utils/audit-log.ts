@@ -43,20 +43,20 @@ class AuditLogger {
     return AuditLogger.instance;
   }
   
-  log(event: Omit<SecurityEvent, 'id' | 'timestamp' | 'severity'>): void {
-    const severity = this.calculateSeverity(event);
+  log(event: Omit<SecurityEvent, 'id' | 'timestamp' | 'severity'> & { severity?: 'low' | 'medium' | 'high' | 'critical' }): void {
+    const severity = event.severity || this.calculateSeverity(event);
     
     const fullEvent: SecurityEvent = {
+      ...event,
       id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date().toISOString(),
-      severity,
-      ...event
+      severity
     };
     
     this.events.push(fullEvent);
     
     // Console output in development
-    if (process.env.NODE_ENV === 'development') {
+    if (typeof globalThis !== 'undefined') {
       const color = severity === 'critical' ? '\x1b[31m' 
                   : severity === 'high' ? '\x1b[33m'
                   : severity === 'medium' ? '\x1b[36m'
@@ -80,7 +80,7 @@ class AuditLogger {
     }
   }
   
-  private calculateSeverity(event: Omit<SecurityEvent, 'severity'>): 'low' | 'medium' | 'high' | 'critical' {
+  private calculateSeverity(event: { type: SecurityEventType }): 'low' | 'medium' | 'high' | 'critical' {
     if (event.type === 'WEBHOOK_INVALID' || event.type === 'UNAUTHORIZED_ACCESS') {
       return 'high';
     }

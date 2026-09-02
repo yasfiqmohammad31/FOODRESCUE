@@ -163,10 +163,12 @@ ordersRouter.get("/merchant/queue", requireRole("MERCHANT", "ADMIN"), (c) => {
   const user = c.get('user');
   
   let targetMerchantId = user?.sub;
-  if (user?.role === 'ADMIN' || !targetMerchantId) {
-    // Admin can see all orders, or fallback to first merchant
-    const merchant = db.merchants[0];
-    targetMerchantId = merchant?.id;
+  if (user?.role === 'ADMIN') {
+    // Admin can see all orders - return empty if no merchant context
+    const allOrders = db.orders;
+    return c.json({ success: true, orders: allOrders });
+  } else if (!targetMerchantId) {
+    return c.json({ success: false, message: 'Merchant ID tidak ditemukan', code: 'MERCHANT_NOT_FOUND' }, 404);
   } else {
     const found = db.merchants.find((m) => m.userId === targetMerchantId || m.id === targetMerchantId);
     if (found) targetMerchantId = found.id;
@@ -177,9 +179,7 @@ ordersRouter.get("/merchant/queue", requireRole("MERCHANT", "ADMIN"), (c) => {
     return c.json({ success: true, orders: queue });
   }
 
-  const merchant = db.merchants[0];
-  const queue = merchant ? db.orders.filter((o) => o.merchantId === merchant.id) : [];
-  return c.json({ success: true, orders: queue });
+  return c.json({ success: true, orders: [] });
 });
 
 // POST /orders/:id/undo (Server Authority 60s Cancellation)

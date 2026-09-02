@@ -57,20 +57,20 @@ function resolveMerchantContext(c: any): MerchantProfile {
       const newM: MerchantProfile = {
         id: `mer-${user.id}`,
         userId: user.id,
-        storeName: (user as any).storeName || user.name || "Mitra Gerai",
-        category: (user as any).category || "Bakery & Pastry",
+        storeName: (user as any).storeName || user.name || "",
+        category: (user as any).category || "",
         businessPhone: user.phone || "",
         address: "",
         mapsUrl: "",
         location: { lat: -7.2856, lng: 112.6954 },
         openTime: "08:00",
         closeTime: "21:00",
-        bankName: "BCA",
+        bankName: "",
         accountNumber: "",
         accountHolder: "",
         isStoreOpen: false,
         agreedSlaAt: new Date().toISOString(),
-        picName: user.name || "Pemilik Gerai",
+        picName: user.name || "",
         avgRating: null as any,
         totalReviews: 0,
         isVerified: false,
@@ -95,20 +95,20 @@ function resolveMerchantContext(c: any): MerchantProfile {
             const newM: MerchantProfile = {
               id: `mer-${user.id}`,
               userId: user.id,
-              storeName: (user as any).storeName || user.name || "Mitra Gerai",
-              category: (user as any).category || "Bakery & Pastry",
+              storeName: (user as any).storeName || user.name || "",
+              category: (user as any).category || "",
               businessPhone: user.phone || "",
               address: "",
               mapsUrl: "",
               location: { lat: -7.2856, lng: 112.6954 },
               openTime: "08:00",
               closeTime: "21:00",
-              bankName: "BCA",
+              bankName: "",
               accountNumber: "",
               accountHolder: "",
               isStoreOpen: false,
               agreedSlaAt: new Date().toISOString(),
-              picName: user.name || "Pemilik Gerai",
+              picName: user.name || "",
               avgRating: null as any,
               totalReviews: 0,
               isVerified: false,
@@ -122,34 +122,8 @@ function resolveMerchantContext(c: any): MerchantProfile {
     } catch {}
   }
 
-  if (db.merchants.length > 0) {
-    return db.merchants[db.merchants.length - 1];
-  }
-
-  const cleanFallback: MerchantProfile = {
-    id: `mer-${Date.now().toString().slice(-6)}`,
-    userId: `usr-${Date.now().toString().slice(-6)}`,
-    storeName: "Mitra Gerai",
-    category: "Bakery & Pastry",
-    businessPhone: "",
-    address: "",
-    mapsUrl: "",
-    location: { lat: -7.2856, lng: 112.6954 },
-    openTime: "08:00",
-    closeTime: "21:00",
-    bankName: "BCA",
-    accountNumber: "",
-    accountHolder: "",
-    isStoreOpen: false,
-    agreedSlaAt: new Date().toISOString(),
-    picName: "Mitra Gerai",
-    avgRating: null as any,
-    totalReviews: 0,
-    isVerified: false,
-    createdAt: new Date().toISOString(),
-  };
-  db.merchants.push(cleanFallback);
-  return cleanFallback;
+  // No fallback data - return error or empty merchant profile
+  throw new Error("Merchant context tidak ditemukan. Silakan login atau kirim user ID yang valid.");
 }
 
 // GET /listings/merchant/my-listings (Merchant List Management - No Store Open Restriction)

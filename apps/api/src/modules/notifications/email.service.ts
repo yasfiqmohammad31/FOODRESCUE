@@ -148,7 +148,7 @@ export function buildOrderConfirmationEmail(
           </tr>
           <tr>
             <td style="padding-bottom: 8px; font-size: 12px; color: #78716c;">Gerai Mitra</td>
-            <td align="right" style="padding-bottom: 8px; font-size: 12px; font-weight: 600; color: #1c1917;">${merchant?.storeName || "Mitra Gerai FOODRESCUE"}</td>
+            <td align="right" style="padding-bottom: 8px; font-size: 12px; font-weight: 600; color: #1c1917;">${merchant?.storeName || ""}</td>
           </tr>
           <tr>
             <td style="padding-bottom: 8px; font-size: 12px; color: #78716c;">Alamat Pengambilan</td>
@@ -156,7 +156,7 @@ export function buildOrderConfirmationEmail(
           </tr>
           <tr>
             <td style="padding-bottom: 8px; font-size: 12px; color: #78716c;">Waktu Ambil</td>
-            <td align="right" style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #166534;">${listing.pickupStartTime} - ${listing.pickupEndTime} WIB</td>
+            <td align="right" style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #166534;">${listing.pickupStart} - ${listing.pickupEnd} WIB</td>
           </tr>
           <tr>
             <td style="border-top: 1px dashed #d6d3d1; padding-top: 10px; font-size: 13px; font-weight: 800; color: #1c1917;">Total Pembayaran</td>
@@ -279,7 +279,7 @@ export function buildMerchantPayoutEmail(
     style: "currency",
     currency: "IDR",
     maximumFractionDigits: 0,
-  }).format(payout.netAmount);
+  }).format(payout.amount);
 
   const subject = `💰 [FOODRESCUE] Pencairan Saldo Gerai ${merchant.storeName} - ${formattedNet}`;
 

@@ -5,9 +5,11 @@ export interface Env {
   JWT_ACCESS_SECRET: string;
   XENDIT_CALLBACK_TOKEN: string;
   XENDIT_SECRET_KEY?: string;
+  XENDIT_WEBHOOK_SECRET?: string;
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
   FONNTE_TOKEN?: string;
+  WHATSAPP_API_KEY?: string;
   CACHE_KV?: KVNamespace;
   FOOD_STORAGE_R2?: R2Bucket;
   AI?: any; // Cloudflare Workers AI binding
@@ -90,6 +92,7 @@ export type OrderStatus =
   | "PICKED_UP"
   | "CANCELLED_CONSUMER_UNDO"
   | "CANCELLED_MERCHANT"
+  | "CANCELLED_TIMEOUT"
   | "NO_SHOW";
 
 export type PaymentMethod = "QRIS" | "EWALLET" | "RESCUE_CREDIT";
@@ -128,6 +131,7 @@ export interface PayoutItem {
   payoutNumber: string; // e.g. WD-20260829-8821
   merchantId: string;
   amount: number;
+  platformFee?: number;
   bankName: string;
   accountNumber: string;
   accountHolder: string;
@@ -149,6 +153,32 @@ export interface CreditTransaction {
   type: "REFUND_UNDO" | "REFUND_MERCHANT_CANCEL" | "PURCHASE_PAYMENT" | "BANK_WITHDRAWAL";
   description: string;
   createdAt: string;
+}
+
+export interface Payment {
+  id: string;
+  orderId: string;
+  amount: number;
+  status: "PENDING" | "PAID" | "FAILED" | "EXPIRED";
+  paymentMethod: PaymentMethod;
+  xenditPaymentId?: string;
+  type?: string;
+  invoiceUrl?: string;
+  paidAt?: string;
+  expiredAt?: string;
+  createdAt: string;
+}
+
+export interface DatabaseStore {
+  users: User[];
+  merchants: MerchantProfile[];
+  listings: Listing[];
+  orders: Order[];
+  payouts: PayoutItem[];
+  wallets: RescueCreditWallet[];
+  transactions: CreditTransaction[];
+  reviews: Review[];
+  impactStats: ImpactStats[];
 }
 
 export interface VoucherTokenPayload {

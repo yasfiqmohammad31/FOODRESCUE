@@ -9,10 +9,8 @@ export function getMerchantForContext(c: any): MerchantProfile {
   const user = c.get('user');
   
   if (user && user.role === 'ADMIN') {
-    if (db.merchants.length > 0) {
-      return db.merchants[db.merchants.length - 1];
-    }
-    return createFallbackMerchant();
+    // Admin can access all data - don't require merchant context
+    throw new Error('Admin tidak memerlukan merchant context. Gunakan API admin khusus.');
   }
 
   if (user) {
@@ -27,20 +25,20 @@ export function getMerchantForContext(c: any): MerchantProfile {
       const newM: MerchantProfile = {
         id: `mer-${userRecord.id}`,
         userId: userRecord.id,
-        storeName: (userRecord as any).storeName || userRecord.name || "Mitra Gerai",
-        category: (userRecord as any).category || "Bakery & Pastry",
-        businessPhone: userRecord.phone || "",
-        address: "",
-        mapsUrl: "",
+        storeName: (userRecord as any).storeName || userRecord.name || '',
+        category: (userRecord as any).category || '',
+        businessPhone: userRecord.phone || '',
+        address: '',
+        mapsUrl: '',
         location: { lat: -7.2856, lng: 112.6954 },
-        openTime: "08:00",
-        closeTime: "21:00",
-        bankName: "BCA",
-        accountNumber: "",
-        accountHolder: "",
+        openTime: '08:00',
+        closeTime: '21:00',
+        bankName: '',
+        accountNumber: '',
+        accountHolder: '',
         isStoreOpen: false,
         agreedSlaAt: new Date().toISOString(),
-        picName: userRecord.name || "Pemilik Gerai",
+        picName: userRecord.name || '',
         avgRating: null as any,
         totalReviews: 0,
         isVerified: false,
@@ -51,36 +49,5 @@ export function getMerchantForContext(c: any): MerchantProfile {
     }
   }
 
-  if (db.merchants.length > 0) {
-    return db.merchants[db.merchants.length - 1];
-  }
-
-  return createFallbackMerchant();
-}
-
-function createFallbackMerchant(): MerchantProfile {
-  const cleanFallback: MerchantProfile = {
-    id: `mer-${Date.now().toString().slice(-6)}`,
-    userId: `usr-${Date.now().toString().slice(-6)}`,
-    storeName: "Mitra Gerai",
-    category: "Bakery & Pastry",
-    businessPhone: "",
-    address: "",
-    mapsUrl: "",
-    location: { lat: -7.2856, lng: 112.6954 },
-    openTime: "08:00",
-    closeTime: "21:00",
-    bankName: "BCA",
-    accountNumber: "",
-    accountHolder: "",
-    isStoreOpen: false,
-    agreedSlaAt: new Date().toISOString(),
-    picName: "Mitra Gerai",
-    avgRating: null as any,
-    totalReviews: 0,
-    isVerified: false,
-    createdAt: new Date().toISOString(),
-  };
-  db.merchants.push(cleanFallback);
-  return cleanFallback;
+  throw new Error('Merchant context tidak ditemukan. Silakan login terlebih dahulu.');
 }

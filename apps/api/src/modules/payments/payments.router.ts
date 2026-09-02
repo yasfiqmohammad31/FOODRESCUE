@@ -173,14 +173,15 @@ paymentsRouter.post("/webhook", webhookRateLimiter, async (c) => {
         order.paidAt = new Date().toISOString();
         order.undoDeadline = new Date(Date.now() + 60 * 1000).toISOString();
 
-        // Record in db.payments
         const paymentRecord: Payment = {
           id: payload.id || `pay-${Date.now()}`,
           orderId: order.id,
+          amount: payload.amount || order.totalPrice,
+          status: "PAID",
+          paymentMethod: "QRIS",
           xenditPaymentId: payload.id || `xnd-${Date.now()}`,
           type: "CHARGE",
-          amount: payload.amount || order.totalPrice,
-          status: "SUCCESS",
+          paidAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
         };
         db.payments.push(paymentRecord);

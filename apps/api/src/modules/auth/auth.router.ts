@@ -102,7 +102,7 @@ authRouter.post("/login", authRateLimiter, zValidator("json", loginSchema), asyn
 authRouter.post("/register", authRateLimiter, zValidator("json", registerSchema), async (c) => {
   const body = c.req.valid("json");
 
-  const chosenStoreName = sanitizeText(body.storeName || body.name || "Mitra Gerai");
+  const chosenStoreName = sanitizeText(body.storeName || body.name || "");
 
   const newUser: User = {
     id: `usr-${Date.now().toString().slice(-6)}`,
